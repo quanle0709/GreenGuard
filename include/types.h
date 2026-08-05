@@ -15,8 +15,7 @@ inline const char* toString(RainStableState v) { return v==RainStableState::WET?
 inline const char* toString(ErrorCode v) { switch(v){case ErrorCode::MOTOR_TIMEOUT:return "MOTOR_TIMEOUT";case ErrorCode::FILESYSTEM_ERROR:return "FILESYSTEM_ERROR";case ErrorCode::INVALID_CONFIGURATION:return "INVALID_CONFIGURATION";case ErrorCode::POSITION_UNKNOWN:return "POSITION_UNKNOWN";case ErrorCode::STORAGE_ERROR:return "STORAGE_ERROR";default:return "NO_ERROR";} }
 
 struct AppConfig {
-  int wetThreshold=500, dryThreshold=650;
-  bool rainValueIncreasesWhenWet=false, motorDirectionReversed=false;
+  bool rainDigitalActiveLow=true, motorDirectionReversed=false;
   uint32_t rainConfirmationMs=3000, dryConfirmationMs=30000;
   uint32_t fullTravelTimeMs=DEFAULT_FULL_TRAVEL_TIME_MS;
   uint16_t motorPwmSpeed=750;

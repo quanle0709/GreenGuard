@@ -1,10 +1,10 @@
 # GreenGuard
 
-GreenGuard là bộ rèm bảo vệ cây tự động dùng NodeMCU ESP-12E, cảm biến mưa analog, cầu H HW-039/BTS7960, dashboard nội bộ và ThingSpeak. Điều khiển motor, xác nhận mưa/khô, timeout và AUTO đều chạy tại chỗ; mất Internet hoặc ThingSpeak không làm mất chức năng bảo vệ.
+GreenGuard là bộ rèm bảo vệ cây tự động dùng NodeMCU ESP-12E, ngõ số DO của cảm biến mưa, cầu H HW-039/BTS7960, dashboard nội bộ và ThingSpeak. Điều khiển motor, xác nhận mưa/khô, timeout và AUTO đều chạy tại chỗ; mất Internet hoặc ThingSpeak không làm mất chức năng bảo vệ.
 
 ## Tính năng
 
-- Lọc trung bình 10 mẫu, hysteresis, xác nhận mưa/khô không chặn.
+- Đọc DO định kỳ và xác nhận trạng thái mưa/khô theo thời gian, không chặn vòng lặp.
 - Đóng khi WET ổn định; mở khi DRY ổn định; AUTO bị khóa nếu vị trí chưa biết hoặc có lỗi.
 - Ước lượng vị trí 0% (đóng)–100% (mở), chạy phần thời gian còn lại, dừng và đảo chiều an toàn 500 ms.
 - Lưu cấu hình, vị trí, trạng thái chuyển động và số sự kiện mưa bằng LittleFS theo kiểu file tạm rồi đổi tên.
@@ -14,7 +14,19 @@ GreenGuard là bộ rèm bảo vệ cây tự động dùng NodeMCU ESP-12E, c�
 
 ## Phần cứng và phần mềm
 
-NodeMCU 1.0 ESP-12E, cảm biến mưa AO, motor DC 12 V, HW-039/BTS7960, nguồn 12 V phù hợp, nguồn logic 5 V, cầu chì và dây điện đúng dòng. Cài VS Code, PlatformIO IDE hoặc PlatformIO Core. Xem [WIRING.md](WIRING.md) trước khi cấp nguồn.
+NodeMCU 1.0 ESP-12E, module cảm biến mưa có DO, motor DC 12 V, HW-039/BTS7960, nguồn 12 V phù hợp, nguồn logic 5 V, cầu chì và dây điện đúng dòng. Cài VS Code, PlatformIO IDE hoặc PlatformIO Core. Xem [WIRING.md](WIRING.md) trước khi cấp nguồn.
+
+| Kết nối | Chức năng |
+|---|---|
+| D1 / GPIO5 | Rain sensor DO |
+| D5 / GPIO14 | BTS7960 RPWM |
+| D6 / GPIO12 | BTS7960 LPWM |
+| R_EN | 5 V logic |
+| L_EN | 5 V logic |
+| D7 | Không sử dụng |
+| A0 | Không sử dụng |
+
+Hai chân Enable luôn được bật bằng 5 V. Firmware không điều khiển Enable và dừng motor bằng cách đưa cả RPWM lẫn LPWM về 0. Không nối R_EN/L_EN đồng thời vào 5 V và ESP8266. Cấu hình phần cứng này đã được kiểm tra bằng code test và motor đã chạy thành công.
 
 ## Cấu trúc
 
@@ -37,7 +49,7 @@ Sao chép/điền `include/secrets.h` (file này bị Git bỏ qua), không chia
 #define THINGSPEAK_WRITE_API_KEY "write-key"
 ```
 
-Trong ThingSpeak tạo channel với tám field: **Rain Filtered**, **Rain Stable (0 dry, 1 wet)**, **Curtain Position %**, **Mode (0 auto, 1 manual)**, **Rain Event Count**, **Motor State**, **WiFi RSSI**, **Error Code**. Firmware dùng đúng một `writeFields()` mỗi chu kỳ tối thiểu 20 giây.
+Trong ThingSpeak tạo channel với tám field: **Rain DO Level (0 LOW, 1 HIGH)**, **Rain Stable (0 dry, 1 wet)**, **Curtain Position %**, **Mode (0 auto, 1 manual)**, **Rain Event Count**, **Motor State**, **WiFi RSSI**, **Error Code**. Firmware dùng đúng một `writeFields()` mỗi chu kỳ tối thiểu 20 giây.
 
 ```powershell
 pio run
@@ -48,9 +60,11 @@ pio device monitor
 
 Phải nạp cả firmware và LittleFS. Nếu `pio` không có trong terminal thường, dùng các nút Build, Upload, Upload Filesystem Image và Monitor trên thanh công cụ PlatformIO. Khi Wi-Fi kết nối, mở `http://greenguard.local`; nếu mDNS không hoạt động, dùng IP in trên Serial Monitor. Firmware không in mật khẩu/API key.
 
+Khi thay đổi code firmware phải nạp lại firmware bằng `pio run -t upload`. Khi thay đổi giao diện web trong `data/` phải nạp lại LittleFS bằng `pio run -t uploadfs`.
+
 ## Hiệu chuẩn
 
-Đọc giá trị thô/lọc khi cảm biến **khô hoàn toàn**, sau đó khi **ướt thực tế**. Chọn `rainValueIncreasesWhenWet` đúng chiều. Với cảm biến giảm khi ướt, `wetThreshold` phải nhỏ hơn `dryThreshold`; với cảm biến tăng khi ướt thì ngược lại. Khoảng giữa hai ngưỡng là hysteresis, ngăn trạng thái rung quanh một điểm. Mặc định 500/650 chỉ là giá trị khởi đầu và bắt buộc phải đo lại.
+Chỉ nối DO vào D1/GPIO5; AO để hở và A0 không dùng. Làm cảm biến khô rồi làm ướt ở mức cần phát hiện, đồng thời chỉnh biến trở trên module để DO đổi trạng thái chắc chắn. Dashboard hiển thị trực tiếp mức `HIGH/LOW` và trạng thái ngõ vào. Phần lớn module xuất LOW khi ướt nên `rainDigitalActiveLow` mặc định là `true`; nếu module của bạn xuất HIGH khi ướt, bỏ chọn mục **DO ở mức LOW khi có mưa**. Firmware vẫn yêu cầu trạng thái mưa liên tục 3 giây và khô liên tục 30 giây trước khi đổi trạng thái ổn định, giúp chống rung tín hiệu.
 
 Đo vài lần thời gian rèm chạy hết hành trình rồi đặt `fullTravelTimeMs` (5–60 giây). Đưa rèm thật tới đầu hành trình và bấm **Đặt là Mở hoàn toàn** hoặc **Đặt là Đóng hoàn toàn**. Vị trí chỉ được suy ra từ thời gian: `thời gian = hành trình đầy đủ × khoảng cách % / 100`. Sai số tích lũy do điện áp, tải, ma sát, pin, PWM, trượt hoặc vật cản; hãy hiệu chuẩn lại khi vị trí hiển thị lệch thực tế. 30 giây chỉ là ban đầu, không tăng dư quá mức vì motor có thể tiếp tục ép cơ cấu ở cuối hành trình.
 
@@ -58,8 +72,8 @@ AUTO đóng ở WET ổn định và mở ở DRY ổn định. MANUAL gồm M�
 
 ## Danh sách kiểm thử bắt buộc
 
-1. Khởi động khi tháo motor; đo RPWM, LPWM, ENABLE đều LOW trong khởi động.
-2. Xem raw; ghi số khô và ướt; đặt hai ngưỡng/hướng; kiểm tra xác nhận WET 3 s và DRY 30 s.
+1. Khởi động khi tháo motor; đo RPWM và LPWM đều LOW trong khởi động. R_EN/L_EN nối cố định 5 V nên luôn HIGH; D7 không dùng.
+2. Quan sát mức DO khi khô và ướt; chỉnh biến trở và `rainDigitalActiveLow`; kiểm tra xác nhận WET 3 s và DRY 30 s.
 3. Đưa rèm mở hẳn, bấm **Đặt là Mở hoàn toàn**.
 4. Close khoảng 2 s rồi Stop; motor phải dừng ngay và vị trí phải đổi.
 5. Kiểm tra hai chiều; nếu sai bật `motorDirectionReversed`.
@@ -74,9 +88,9 @@ AUTO đóng ở WET ổn định và mở ở DRY ổn định. MANUAL gồm M�
 ## Khắc phục sự cố
 
 - Không có dashboard: kiểm tra SSID, IP Serial, nạp `uploadfs`, cùng mạng LAN; thử IP thay mDNS.
-- Motor không chạy: kiểm tra nguồn 12 V tại B+/B-, 5 V logic tại VCC, GND chung, cầu chì, ENABLE và lỗi dashboard.
+- Motor không chạy: kiểm tra nguồn 12 V tại B+/B-, 5 V logic tại VCC và cả R_EN/L_EN, GND chung, cầu chì, hai tín hiệu PWM và lỗi dashboard.
 - Chiều sai: đổi `motorDirectionReversed`, không cần đổi dây.
-- Mưa đảo: đổi `rainValueIncreasesWhenWet`, sau đó đặt lại ngưỡng hợp lệ.
+- Mưa đảo: đổi `rainDigitalActiveLow`; chỉnh biến trở module nếu DO dao động hoặc không chuyển mức.
 - Vị trí trôi: đo lại thời gian, kiểm tra tải/nguồn và hiệu chuẩn đầu hành trình.
 - ThingSpeak lỗi: kiểm tra channel ID/write key và Wi-Fi; điều khiển cục bộ vẫn tiếp tục.
 
