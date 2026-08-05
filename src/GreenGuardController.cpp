@@ -1,0 +1,25 @@
+#include "GreenGuardController.h"
+#include <math.h>
+
+void GreenGuardController::begin(const PersistentState& s,const AppConfig& c){state_=s;cfg_=c;if(state_.movementWasActive){state_.positionKnown=false;state_.movementWasActive=false;save();Serial.println(F("Interrupted movement detected; position UNKNOWN"));}motor_.configure(cfg_);rain_.configure(cfg_);}
+float GreenGuardController::currentPosition()const{if(!motor_.isMoving()||motor_.state()==MotorState::MOTOR_REVERSING)return state_.estimatedPosition;float fraction=cfg_.fullTravelTimeMs?((float)motor_.elapsed()/cfg_.fullTravelTimeMs*100.0f):0;float p=motor_.state()==MotorState::MOTOR_OPENING?motor_.startPosition()+fraction:motor_.startPosition()-fraction;return constrain(p,0.0f,100.0f);}
+void GreenGuardController::save(){if(!storage_.saveState(state_))Serial.println(F("State save failed"));}
+bool GreenGuardController::startTo(float target,bool unknown){if(motor_.error()!=ErrorCode::NO_ERROR)return false;if(!unknown&&!state_.positionKnown)return false;if(motor_.isMoving()&&((target>currentPosition()&&motor_.state()==MotorState::MOTOR_OPENING)||(target<currentPosition()&&motor_.state()==MotorState::MOTOR_CLOSING)))return true;
+ state_.estimatedPosition=currentPosition();state_.movementWasActive=true;if(!storage_.saveState(state_))return false;bool ok=unknown?motor_.startUnknown(target>50?MotorState::MOTOR_OPENING:MotorState::MOTOR_CLOSING):(target>state_.estimatedPosition?motor_.openToTarget(state_.estimatedPosition,target):motor_.closeToTarget(state_.estimatedPosition,target));if(!ok){state_.movementWasActive=false;save();}return ok;}
+void GreenGuardController::stopAndSave(bool manual){state_.estimatedPosition=currentPosition();motor_.stop(true);state_.movementWasActive=false;if(manual)mode_=OperatingMode::MANUAL;save();}
+void GreenGuardController::evaluateAuto(){if(mode_!=OperatingMode::AUTO||!state_.positionKnown||error()!=ErrorCode::NO_ERROR)return;if(rain_.stable()==RainStableState::WET)startTo(0);else if(rain_.stable()==RainStableState::DRY)startTo(100);}
+void GreenGuardController::update(){RainStableState changed;if(rain_.consumeStableChange(changed)){Serial.printf("Rain stable state: %s\n",toString(changed));if(lastRain_==RainStableState::DRY&&changed==RainStableState::WET){state_.rainEventCount++;save();Serial.printf("Rain event: %lu\n",(unsigned long)state_.rainEventCount);}lastRain_=changed;evaluateAuto();}
+ if(motor_.timeoutPending()){float delta=(float)motor_.lastElapsed()/cfg_.fullTravelTimeMs*100.0f;state_.estimatedPosition=constrain(motor_.lastDirection()==MotorState::MOTOR_OPENING?motor_.startPosition()+delta:motor_.startPosition()-delta,0.0f,100.0f);state_.positionKnown=false;state_.movementWasActive=false;save();Serial.println(F("Motor timeout"));}
+ if(motor_.completionPending()){state_.estimatedPosition=motor_.targetPosition();state_.positionKnown=true;state_.movementWasActive=false;save();Serial.println(F("Motor movement complete"));}
+}
+CurtainState GreenGuardController::curtainState()const{if(error()!=ErrorCode::NO_ERROR)return CurtainState::ERROR;if(motor_.state()==MotorState::MOTOR_OPENING)return CurtainState::OPENING;if(motor_.state()==MotorState::MOTOR_CLOSING)return CurtainState::CLOSING;if(!state_.positionKnown)return CurtainState::UNKNOWN;float p=currentPosition();if(p>=99.5f)return CurtainState::OPEN;if(p<=0.5f)return CurtainState::CLOSED;return CurtainState::PARTIALLY_OPEN;}
+ErrorCode GreenGuardController::error()const{return motor_.error();}
+bool GreenGuardController::command(const String& cmd,bool confirmed,String& msg,int& status){status=200;
+ if(cmd=="stop"){stopAndSave(true);msg=F("Đã dừng rèm");return true;}
+ if(cmd=="auto"){mode_=OperatingMode::AUTO;msg=F("Đã bật chế độ tự động");evaluateAuto();return true;}
+ if(cmd=="set_open"||cmd=="set_closed"){if(motor_.isMoving()){status=409;msg=F("Phải dừng động cơ trước khi hiệu chuẩn");return false;}motor_.stop(true);state_.estimatedPosition=cmd=="set_open"?100:0;state_.positionKnown=true;state_.movementWasActive=false;save();msg=F("Đã hiệu chuẩn vị trí");return true;}
+ if(cmd=="open"||cmd=="close"){if(error()!=ErrorCode::NO_ERROR){status=409;msg=F("Hãy xóa lỗi và hiệu chuẩn vị trí");return false;}if(!state_.positionKnown&&!confirmed){status=409;msg=F("Cần xác nhận vì vị trí chưa xác định");return false;}float target=cmd=="open"?100:0;MotorState wanted=cmd=="open"?MotorState::MOTOR_OPENING:MotorState::MOTOR_CLOSING;if(motor_.state()==wanted){status=409;msg=F("Rèm đang chạy theo hướng này");return false;}mode_=OperatingMode::MANUAL;if(!startTo(target,!state_.positionKnown)){status=500;msg=F("Không thể khởi động động cơ hoặc lưu trạng thái");return false;}msg=cmd=="open"?F("Đang mở rèm"):F("Đang đóng rèm");return true;}
+ status=400;msg=F("Lệnh không hợp lệ");return false;
+}
+bool GreenGuardController::applyConfig(const AppConfig& c){if(!PersistentStorage::validateConfig(c)||!storage_.saveConfig(c))return false;cfg_=c;motor_.configure(c);rain_.configure(c);return true;}
+bool GreenGuardController::clearError(){motor_.stop(false);motor_.clearError();state_.movementWasActive=false;save();return true;}
