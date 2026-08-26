@@ -40,8 +40,9 @@ Browser chỉ quan sát và gửi yêu cầu. ESP8266 mới là nơi quyết đ�
 | NodeMCU 1.0 (ESP-12E Module), ESP8266 | **Đã xác nhận**; PlatformIO `nodemcuv2` |
 | BTS7960 / IBT-2-style driver | Chủ dự án nhớ là có; chưa nhìn lại model/terminal |
 | Motor DC giảm tốc, có thể là 12 V | Chưa xác nhận điện áp, chiều, dòng định mức/stall |
-| Cảm biến mưa dùng DO | Chưa xác nhận model, VCC, cực tính hay điện áp DO |
+| Cảm biến mưa RainDrop dùng DO | Chưa xác nhận model, VCC, cực tính hay điện áp DO |
 | R_EN/L_EN, nguồn, GND chung, fuse | Chưa xác nhận |
+| Module hạ áp XL4005|
 | Công tắc hành trình | Chưa thấy bằng chứng; firmware để tắt |
 
 Pin trong code là **profile ứng viên từ lịch sử repo**, không phải sơ đồ as-built:
