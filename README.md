@@ -85,7 +85,7 @@ AUTO đóng ở WET ổn định và mở ở DRY ổn định. MANUAL gồm M�
 11. Ngắt Wi-Fi: logic AUTO vẫn hoạt động; nối lại: ThingSpeak gửi tiếp.
 12. Tạo timeout: motor dừng, lỗi `MOTOR_TIMEOUT`, vị trí UNKNOWN; xóa lỗi không được tự chạy.
 
-## Khắc phục sự cố
+## Khắc phục sự cố.
 
 - Không có dashboard: kiểm tra SSID, IP Serial, nạp `uploadfs`, cùng mạng LAN; thử IP thay mDNS.
 - Motor không chạy: kiểm tra nguồn 12 V tại B+/B-, 5 V logic tại VCC và cả R_EN/L_EN, GND chung, cầu chì, hai tín hiệu PWM và lỗi dashboard.
