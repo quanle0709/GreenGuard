@@ -38,12 +38,11 @@ Browser chỉ quan sát và gửi yêu cầu. ESP8266 mới là nơi quyết đ�
 | Thành phần | Trạng thái hiện tại |
 | --- | --- |
 | NodeMCU 1.0 (ESP-12E Module), ESP8266 | **Đã xác nhận**; PlatformIO `nodemcuv2` |
-| BTS7960 / IBT-2-style driver | Chủ dự án nhớ là có; chưa nhìn lại model/terminal |
-| Motor DC giảm tốc, có thể là 12 V | Chưa xác nhận điện áp, chiều, dòng định mức/stall |
+| BTS7960 / Driver HW-039 | ** Đã xác nhận** |
+| Motor DC giảm tốc, có thể là 12 V DC |  |
 | Cảm biến mưa RainDrop dùng DO | Chưa xác nhận model, VCC, cực tính hay điện áp DO |
-| R_EN/L_EN, nguồn, GND chung, fuse | Chưa xác nhận |
+| Nguồn tổ ong 12V 10A DC |  |
 | Module hạ áp XL4005|
-| Công tắc hành trình | Chưa thấy bằng chứng; firmware để tắt |
 
 Pin trong code là **profile ứng viên từ lịch sử repo**, không phải sơ đồ as-built:
 
@@ -53,8 +52,8 @@ Pin trong code là **profile ứng viên từ lịch sử repo**, không phải 
 | D5 | 14 | RPWM | Chưa xác nhận đầu dây và chiều |
 | D6 | 12 | LPWM | Không bao giờ hoạt động cùng RPWM |
 | D2 | 4 |R_EN VÀ L_EN tùy chọn | Mặc định không dùng; tuyệt đối không nối khi EN vẫn ở 5 V |
-| D7 | 13 | Limit thu tùy chọn | Tắt; cần pull-up 3.3 V ngoài |
-| D0 | 16 | Limit che tùy chọn | Tắt; cần pull-up 3.3 V ngoài |
+|Vin|   | 5V OUT+ XL4005 |
+|VCC|   | GND OUT- XL4005|
 
 D3/GPIO0, D4/GPIO2 và D8/GPIO15 là chân boot-strapping nên profile mặc định tránh dùng. Xem [wiring worksheet](WIRING.md) và [hardware audit](docs/HARDWARE_AUDIT.md) trước khi cắm bất cứ dây nào.
 
