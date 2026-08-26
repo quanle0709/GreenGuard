@@ -1,8 +1,126 @@
-<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GreenGuard</title><link rel="stylesheet" href="/style.css"></head><body>
-<header><div><p class="eyebrow">BẢO VỆ CÂY TỰ ĐỘNG</p><h1>🌿 GreenGuard</h1><p id="connection">Đang kết nối…</p></div><span id="demo" hidden>DEMO MODE</span></header>
-<main><section id="warning" class="warning" hidden>Không xác định được vị trí rèm. Hãy kiểm tra rèm thực tế và đặt lại trạng thái Mở hoặc Đóng.</section>
-<section class="hero card"><div><span class="label">TRẠNG THÁI MƯA</span><h2 id="rain">—</h2><p>Ổn định: <b id="stable">—</b> · Mức DO: <b id="digitalLevel">—</b> · Ngõ vào: <b id="inputActive">—</b></p></div><div class="drop">💧</div></section>
-<div class="grid"><section class="card curtain"><span class="label">VỊ TRÍ RÈM</span><div class="position"><strong id="position">—</strong><span>%</span></div><div class="bar"><i id="bar"></i></div><p><b id="curtainState">—</b> · <span id="known">—</span></p><div id="motion" class="motion"><span></span><em id="remaining">Đã dừng</em></div></section>
-<section class="card"><span class="label">ĐIỀU KHIỂN</span><h3 id="mode">—</h3><div class="controls"><button id="open" data-command="open">Mở rèm</button><button id="close" data-command="close">Đóng rèm</button><button class="danger" data-command="stop">Dừng</button><button data-command="auto">Chế độ tự động</button></div><div class="controls secondary"><button id="setOpen" data-command="set_open">Đặt là Mở hoàn toàn</button><button id="setClosed" data-command="set_closed">Đặt là Đóng hoàn toàn</button><button data-error>Xóa lỗi</button></div><p id="message" aria-live="polite"></p></section></div>
-<section class="stats"><article><span>Động cơ</span><b id="motor">—</b></article><article><span>Wi‑Fi</span><b id="wifi">—</b><small id="ip"></small></article><article><span>ThingSpeak</span><b id="thingspeak">—</b></article><article><span>Sự kiện mưa</span><b id="events">—</b></article><article><span>Lỗi</span><b id="error">—</b></article><article><span>Uptime</span><b id="uptime">—</b></article><article><span>Thời gian hành trình</span><b id="travel">—</b></article><article><span>PWM</span><b id="pwm">—</b></article></section>
-<details class="card"><summary>Cấu hình</summary><form id="config"><label><input name="rainDigitalActiveLow" type="checkbox"> DO ở mức LOW khi có mưa</label><label>Xác nhận mưa (ms)<input name="rainConfirmationMs" type="number" min="500" max="30000"></label><label>Xác nhận khô (ms)<input name="dryConfirmationMs" type="number" min="3000" max="300000"></label><label>Hành trình (ms)<input name="fullTravelTimeMs" type="number" min="5000" max="60000"></label><label>PWM<input name="motorPwmSpeed" type="number" min="0" max="1023"></label><label><input name="motorDirectionReversed" type="checkbox"> Đảo chiều động cơ</label><label>Biên timeout (ms)<input name="motorTimeoutMarginMs" type="number" min="2000" max="15000"></label><button>Lưu cấu hình</button></form></details></main><script src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b3428">
+  <title>GreenGuard · Mái che cây</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#main" aria-label="GreenGuard - về bảng điều khiển">
+      <span class="brand-mark" aria-hidden="true">G</span>
+      <span><strong>GreenGuard</strong><small>Mái che cây tự động</small></span>
+    </a>
+    <div id="connectionPill" class="pill offline"><span></span><b id="connectionText">Đang kết nối…</b></div>
+  </header>
+
+  <main id="main">
+    <section id="safetyBanner" class="banner safety" role="status">
+      <strong>Chế độ thử khô đang bật.</strong>
+      Firmware xử lý đầy đủ nhưng không phát PWM ra driver motor.
+    </section>
+    <section id="authBanner" class="banner warning" hidden>
+      CONTROL_TOKEN chưa được cấu hình. Thiết bị trong mạng LAN có thể gửi lệnh mà không cần đăng nhập.
+    </section>
+    <section id="faultBanner" class="banner fault" hidden>
+      <strong id="faultTitle">GreenGuard đã dừng vì lỗi.</strong>
+      <span id="faultHelp">Kiểm tra phần cứng trước khi đặt lại lỗi.</span>
+    </section>
+
+    <section class="hero panel">
+      <div>
+        <p class="eyebrow">TRẠNG THÁI BẢO VỆ</p>
+        <h1 id="shieldLabel">Đang đọc thiết bị…</h1>
+        <p id="shieldDetail" class="muted">Chưa có dữ liệu vị trí.</p>
+      </div>
+      <div class="position-wrap" aria-label="Vị trí ước lượng">
+        <strong id="positionValue">—</strong><span>%</span>
+        <small id="confidenceLabel">Chưa xác định</small>
+      </div>
+      <div class="track" aria-hidden="true"><i id="positionBar"></i></div>
+    </section>
+
+    <div class="dashboard-grid">
+      <section class="panel rain-card">
+        <div class="panel-heading">
+          <div><p class="eyebrow">CẢM BIẾN MƯA</p><h2 id="rainLabel">Chưa xác định</h2></div>
+          <div id="rainIcon" class="weather-icon" aria-hidden="true">◌</div>
+        </div>
+        <dl class="facts">
+          <div><dt>Trạng thái ổn định</dt><dd id="rainStable">UNKNOWN</dd></div>
+          <div><dt>Tín hiệu DO</dt><dd id="rainDigital">—</dd></div>
+          <div><dt>Sự kiện mưa</dt><dd id="rainEvents">—</dd></div>
+        </dl>
+      </section>
+
+      <section class="panel controls-card">
+        <div class="panel-heading">
+          <div><p class="eyebrow">ĐIỀU KHIỂN</p><h2 id="modeLabel">—</h2></div>
+          <span id="motionBadge" class="state-badge">Đã dừng</span>
+        </div>
+        <div class="mode-switch" role="group" aria-label="Chế độ hoạt động">
+          <button type="button" data-command="SET_AUTO">Tự động</button>
+          <button type="button" data-command="SET_MANUAL">Thủ công</button>
+        </div>
+        <div class="action-grid">
+          <button type="button" class="primary" data-command="DEPLOY"><span>Che cây</span><small>Triển khai mái che</small></button>
+          <button type="button" class="secondary" data-command="RETRACT"><span>Thu mái che</span><small>Đưa mái che ra xa</small></button>
+        </div>
+        <button type="button" class="stop" data-command="STOP">Dừng khẩn cấp</button>
+        <button type="button" class="reset" data-command="RESET_FAULT">Đặt lại lỗi sau khi kiểm tra</button>
+        <div id="commandFeedback" class="feedback" aria-live="polite">Chưa có lệnh nào đang chờ.</div>
+      </section>
+    </div>
+
+    <section class="metrics" aria-label="Thông tin hệ thống">
+      <article><span>Motor</span><strong id="motorState">—</strong><small id="motorTiming">—</small></article>
+      <article><span>Wi-Fi</span><strong id="wifiState">—</strong><small id="ipAddress">—</small></article>
+      <article><span>Lỗi</span><strong id="faultCode">—</strong><small id="stopLatch">—</small></article>
+      <article><span>Thiết bị</span><strong>NodeMCU 1.0</strong><small id="boardId">ESP-12E · nodemcuv2</small></article>
+      <article><span>Thời gian chạy</span><strong id="uptime">—</strong><small id="lastUpdate">Chưa cập nhật</small></article>
+      <article><span>Bộ nhớ trống</span><strong id="freeHeap">—</strong><small>ESP8266 heap</small></article>
+    </section>
+
+    <section class="panel settings-panel">
+      <details>
+        <summary>Cài đặt, token và hiệu chuẩn</summary>
+        <div class="settings-grid">
+          <form id="tokenForm" class="subpanel">
+            <h3>Token điều khiển</h3>
+            <p>Token chỉ được giữ trong phiên của trình duyệt này, không ghi vào URL.</p>
+            <label>CONTROL_TOKEN<input id="controlToken" type="password" autocomplete="current-password" placeholder="Nhập token trong secrets.h"></label>
+            <button type="submit">Dùng token này</button>
+          </form>
+
+          <form id="configForm" class="subpanel">
+            <h3>Thời gian và cực tính</h3>
+            <label>Xác nhận ướt (ms)<input name="wetConfirmMs" type="number" min="250" max="30000" required></label>
+            <label>Xác nhận khô (ms)<input name="dryConfirmMs" type="number" min="1000" max="600000" required></label>
+            <label>Khoảng dừng đảo chiều (ms)<input name="directionDeadTimeMs" type="number" min="100" max="5000" required></label>
+            <label>Thời gian toàn hành trình (ms)<input name="inferredFullTravelMs" type="number" min="1000" max="300000" required></label>
+            <label>Thời gian motor tối đa (ms)<input name="motorMaxRuntimeMs" type="number" min="1000" max="360000" required></label>
+            <label>PWM (0–1023)<input name="motorPwm" type="number" min="0" max="1023" required></label>
+            <label class="check"><input name="rainActiveLow" type="checkbox"> DO mức LOW nghĩa là có mưa</label>
+            <label class="check"><input name="deployUsesRpwm" type="checkbox"> DEPLOY dùng RPWM</label>
+            <button type="submit">Lưu cấu hình</button>
+          </form>
+
+          <div class="subpanel calibration">
+            <h3>Đánh dấu đầu hành trình</h3>
+            <p>Chỉ bấm sau khi bạn đã nhìn trực tiếp và chắc chắn mái che đang đúng đầu hành trình.</p>
+            <button type="button" data-command="CALIBRATE_DEPLOYED">Đánh dấu: đã che cây</button>
+            <button type="button" data-command="CALIBRATE_RETRACTED">Đánh dấu: đã thu mái che</button>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <p class="hardware-note">GPIO, cực tính DO, dây R_EN/L_EN, chiều motor và điểm cuối vẫn chưa được kiểm tra vật lý. Đừng tắt dry-run chỉ dựa vào màn hình này.</p>
+  </main>
+
+  <footer>GreenGuard chạy tự động ngay trên ESP8266; mất trình duyệt hoặc Wi-Fi không làm vòng điều khiển mưa dừng lại.</footer>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

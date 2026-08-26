@@ -1,0 +1,15 @@
+{
+  "name": "greenguard-esp8266",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GreenGuard NodeMCU ESP8266 firmware dashboard tests and local preview.",
+  "scripts": {
+    "check": "node scripts/check-project.mjs",
+    "test": "node --test",
+    "preview": "node scripts/mock-dashboard-server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

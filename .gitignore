@@ -1,8 +1,13 @@
 # Local credentials
 include/secrets.h
+.env
+.env.*
+!.env.example
 
 # PlatformIO build output
 .pio/
+node_modules/
+coverage/
 
 # VS Code local settings
 .vscode/

@@ -1,28 +1,38 @@
-# Đấu nối GreenGuard
+# Wiring worksheet — verify before connecting
 
-> **Ngắt nguồn khi đấu dây.** Động cơ dùng nguồn 12 V riêng; tuyệt đối không đưa 12 V vào GPIO, A0, 3V3 hay chân VCC logic của BTS7960. Tất cả GND phải nối chung.
+> **This is not a confirmed as-built diagram.** The controller is confirmed as NodeMCU 1.0 ESP-12E, but every signal and power wire below remains a candidate until physically traced and measured. Keep motor power disconnected and keep `ACTUATOR_DRY_RUN=true`.
 
-| Chân NodeMCU / nguồn | GPIO | Thiết bị | Chân kết nối | Mục đích | Lưu ý điện |
-|---|---:|---|---|---|---|
-| D5 | 14 | BTS7960 | RPWM | PWM một chiều | Logic 3,3 V |
-| D6 | 12 | BTS7960 | LPWM | PWM chiều ngược | Không bao giờ bật đồng thời D5 |
-| GND | — | BTS7960 | GND | Mass logic | Phải chung mass nguồn 12 V |
-| 5 V | — | BTS7960 | VCC | Nguồn logic | Đây không phải đầu vào motor 12 V |
-| 5 V | — | BTS7960 | R_EN và L_EN | Luôn cho phép cầu H | Nối cả hai EN trực tiếp vào 5 V logic; không nối D7 |
-| D1 | 5 | Cảm biến mưa | DO | Tín hiệu mưa số | Mặc định LOW khi có mưa; có thể đảo trong cấu hình |
-| 3V3 | — | Cảm biến mưa | VCC | Nguồn cảm biến | Chỉ cấp 3,3 V |
-| GND | — | Cảm biến mưa | GND | Mass cảm biến | Chung mass |
-| Không nối | — | Cảm biến mưa | AO | Không sử dụng | Để hở |
-| A0 | ADC | — | — | Không sử dụng | Để hở |
-| D7 | 13 | — | — | Không sử dụng | Không nối vào R_EN/L_EN |
-| Nguồn +12 V | — | BTS7960 | B+ | Nguồn công suất | Lắp cầu chì phù hợp |
-| Nguồn 0 V | — | BTS7960 | B- | Nguồn công suất | Nối chung GND logic |
-| Hai dây motor | — | BTS7960 | M+, M- | Đầu ra động cơ | Dây đủ lớn theo dòng motor |
+## Candidate profile compiled by default
 
-R_EN và L_EN luôn ở mức HIGH do nối 5 V; firmware dừng motor bằng cách đưa **cả RPWM và LPWM về 0**. D7 không được dùng. Vì firmware không thể hạ EN, công tắc ngắt nguồn khẩn cấp vật lý càng quan trọng.
+| NodeMCU label | ESP8266 GPIO | Candidate connection | Status | Electrical rule |
+| --- | ---: | --- | --- | --- |
+| D1 | 5 | Rain module DO | Repository lead, unverified | Measure LOW/HIGH voltage; never exceed 3.3 V |
+| D5 | 14 | BTS7960 RPWM | Repository lead, unverified | PWM output; confirm module accepts 3.3 V HIGH |
+| D6 | 12 | BTS7960 LPWM | Repository lead, unverified | PWM output; must never be active with RPWM |
+| D2 | 4 | Optional shared R_EN/L_EN control | Disabled, not part of default wiring | Use only after removing all 5 V enable connections |
+| D7 | 13 | Optional retracted limit | Disabled / no switch confirmed | External pull-up to 3.3 V in the proposed profile |
+| D0 | 16 | Optional deployed limit | Disabled / no switch confirmed | External pull-up to 3.3 V required in the proposed profile |
+| D3 / D4 / D8 | 0 / 2 / 15 | No GreenGuard connection | Intentionally avoided | ESP8266 boot-strapping pins |
 
-Không nối D7 vào R_EN hoặc L_EN. Không đồng thời nối R_EN/L_EN vào 5 V và GPIO ESP8266, và tuyệt đối không đưa 5 V vào GPIO ESP8266. R_EN và L_EN phải nối trực tiếp nguồn logic 5 V; BTS7960 VCC cũng là nguồn logic 5 V. B+ và B- là đầu nguồn motor 12 V, không phải nguồn logic.
+The code assumes `DEPLOY` uses RPWM only as a configurable starting point. If physical motion is opposite, change `deployUsesRpwm`; do not rename the physical meanings.
 
-Chỉ dùng ngõ số **DO** của cảm biến mưa: DO nối D1/GPIO5. Để AO hở, không nối A0. Chỉnh biến trở trên module để DO đổi trạng thái ổn định tại mức ướt mong muốn; quan sát đèn báo DO nếu module có trang bị.
+## R_EN and L_EN decision
 
-Kiểm tra đúng nhãn in trên bo HW-039 vì bố trí chân có thể khác. Motor sử dụng nguồn 12 V riêng và tất cả GND phải nối chung. Thử motor khi chưa gắn rèm. Nếu cấp NodeMCU từ cùng nguồn 12 V, dùng bộ DC-DC và chỉnh khoảng 5 V **trước** khi nối NodeMCU. Không đưa 12 V vào NodeMCU. Nên có cầu chì trên đường nguồn 12 V và công tắc ngắt nguồn motor khẩn cấp. Điều khiển bằng thời gian không phát hiện được motor bị kẹt hoặc vật cản cơ khí.
+The repository claims both enable inputs are pulled to the driver's 5 V logic supply, but this was not inspected. In that arrangement `CONTROL_BTS_ENABLE=false`, D2 stays unused, and firmware stops by setting RPWM=LPWM=0.
+
+A later improvement may join R_EN and L_EN to D2 so firmware can inhibit the bridge. Do this only after disconnecting both enable pins from 5 V. Never connect a 5 V enable node to an ESP8266 GPIO. The actual module's input thresholds and terminal layout must be verified first.
+
+## Power worksheet
+
+| Path | Candidate topology | Still required |
+| --- | --- | --- |
+| Motor power | Rated motor supply → fuse/disconnect → driver B+/B− | Measure motor voltage/stall current and size every part |
+| Motor output | Driver M+/M− → motor | Identify physical deploy/retract direction |
+| Controller | Regulated USB/5 V board input | Verify the exact supply path and ripple; never apply 12 V to a 3.3 V/GPIO pin |
+| Driver logic | Supply required by actual IBT-2 board | Read board markings/data and verify 3.3 V input recognition |
+| Ground | Common logic reference is expected | Trace and measure shared ground before signal connection |
+| Rain sensor | 3.3 V only if the actual module works reliably there; otherwise level-shift DO | Measure DO under every supply arrangement |
+
+Do not select a fuse from a guessed “10 A supply” claim. Use measured motor stall current and the ratings of wire, connectors, switch, driver, and supply. Add a reachable physical emergency disconnect.
+
+See [Hardware audit](docs/HARDWARE_AUDIT.md) and [hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md) before any powered test.

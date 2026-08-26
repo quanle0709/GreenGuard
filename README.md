@@ -1,97 +1,201 @@
-# GreenGuard
+# 🌿 GreenGuard
 
-GreenGuard là bộ rèm bảo vệ cây tự động dùng NodeMCU module ESP8266, ngõ số DO của cảm biến mưa, cầu H HW-039/BTS7960, dashboard nội bộ và ThingSpeak. Điều khiển motor, xác nhận mưa/khô, timeout và AUTO đều chạy tại chỗ; mất Internet hoặc ThingSpeak không làm mất chức năng bảo vệ.
+GreenGuard là mái che cây tự động chạy trên **NodeMCU 1.0 (ESP-12E Module / ESP8266)**. Khi tín hiệu mưa ổn định, bộ điều khiển có thể che cây; khi trời khô đủ lâu, nó mới thu mái che. Toàn bộ phần phản ứng với mưa nằm ngay trên board nên mất điện thoại, trình duyệt hay Wi‑Fi thì logic bảo vệ vẫn chạy.
 
-## Tính năng
+Tụi mình làm GreenGuard vì chuyện chạy ra kéo mái che mỗi khi mưa nghe đơn giản, nhưng nếu đang ở trường hoặc mưa tới quá nhanh thì khá bất tiện. Bản này tập trung vào một MVP dễ hiểu, dễ kiểm tra và không giả vờ biết những gì phần cứng chưa đo được.
 
-- Đọc DO định kỳ và xác nhận trạng thái mưa/khô theo thời gian, không chặn vòng lặp.
-- Đóng khi WET ổn định; mở khi DRY ổn định; AUTO bị khóa nếu vị trí chưa biết hoặc có lỗi.
-- Ước lượng vị trí 0% (đóng)–100% (mở), chạy phần thời gian còn lại, dừng và đảo chiều an toàn 500 ms.
-- Lưu cấu hình, vị trí, trạng thái chuyển động và số sự kiện mưa bằng LittleFS theo kiểu file tạm rồi đổi tên.
-- Khôi phục an toàn sau mất điện: chuyển động dang dở làm vị trí thành UNKNOWN và không tự chạy.
-- Dashboard tiếng Việt responsive, REST JSON, Wi-Fi/mDNS và ThingSpeak 20 giây/lần.
-- `DEMO_MODE` trong `include/config.h` vô hiệu hóa đầu ra motor thật và cho phép API mô phỏng mưa.
+> Controller đã được chủ dự án xác nhận. GPIO, dây BTS7960, điện áp DO, nguồn, chiều motor, công tắc hành trình và thời gian chạy thật **chưa được xác nhận vật lý**.
 
-## Phần cứng và phần mềm
+## Bản hiện tại làm được gì?
 
-NodeMCU 1.0 Module ESP8266, module cảm biến mưa RainDrop, motor DC giảm tốc 2vòng/ phút 12 V DC,Driver cao áp HW-039/BTS7960, nguồn 12 V 10A Tổ ong,Hạ Áp LM2596 cho nguồn logic 5 V DC, cầu chì và dây điện đúng dòng. Cài VS Code, PlatformIO IDE hoặc PlatformIO Core. Xem [WIRING.md](WIRING.md) trước khi cấp nguồn.
+- Lọc nhiễu DO không chặn chương trình: mặc định xác nhận ướt 3 giây, xác nhận khô 120 giây.
+- AUTO tự che cây khi mưa; chỉ tự thu khi khô ổn định và đang có ước lượng vị trí.
+- MANUAL có lệnh rõ nghĩa: **Che cây**, **Thu mái che**, **Dừng khẩn cấp**, **Đặt lại lỗi**.
+- Ngắt cả hai PWM trước khi đổi chiều và chờ dead-time 300 ms.
+- Giới hạn thời gian motor, khóa lỗi, ghi trạng thái LittleFS và chuyển về `UNKNOWN` nếu khởi động lại giữa lúc chạy.
+- Dashboard tiếng Việt chạy trực tiếp trên ESP8266, responsive cho điện thoại, có request ID và trạng thái nhận/bắt đầu/hoàn tất riêng.
+- Có token điều khiển LAN tùy chọn; tự động cảnh báo nếu chưa đặt token.
+- `ACTUATOR_DRY_RUN=true` là mặc định bắt buộc: state machine chạy nhưng RPWM, LPWM và enable do firmware điều khiển vẫn LOW.
 
-| Kết nối | Chức năng |
-|---|---|
-| D1 / GPIO5 | Rain sensor DO |
-| D5 / GPIO14 | BTS7960 RPWM |
-| D6 / GPIO12 | BTS7960 LPWM |
-| R_EN | 5 V logic |
-| L_EN | 5 V logic |
-| D7 | Không sử dụng |
-| A0 | Không sử dụng |
+Nói ngắn gọn: tụi mình muốn code đủ “cứng đầu” để một cú double-click hay Wi‑Fi chập chờn không biến thành lệnh motor thứ hai :)))
 
-Hai chân R_EN và L_EN luôn được kéo lên 5 V. Firmware không điều khiển Enable và dừng motor bằng cách đưa cả RPWM lẫn LPWM về 0. Không nối R_EN/L_EN đồng thời vào 5 V và ESP8266. Cấu hình phần cứng này đã được kiểm tra bằng code test và motor đã chạy thành công.
-
-## Cấu trúc
+## Nó hoạt động như thế nào?
 
 ```text
-platformio.ini, README.md, WIRING.md
-include/  config.h, secrets*.h, types.h, PersistentStorage.h,
-          RainSensor.h, MotorController.h, GreenGuardController.h
-src/      main.cpp và ba lớp triển khai
-data/     index.html, style.css, app.js
+DO cảm biến mưa
+       │
+       v
+xác nhận WET/DRY ──> state machine trên ESP8266 ──> interlock + dry-run ──> BTS7960 ──> motor
+                              │
+                              ├──> trạng thái/cấu hình LittleFS
+                              └──> REST API + dashboard trong cùng mạng LAN
 ```
 
-## Thiết lập và nạp
+Browser chỉ quan sát và gửi yêu cầu. ESP8266 mới là nơi quyết định lệnh có hợp lệ hay không; dashboard không được phép coi “HTTP đã nhận” là “mái che đã chạy xong”.
 
-Sao chép/điền `include/secrets.h` (file này bị Git bỏ qua), không chia sẻ nội dung:
+## Phần cứng
+
+| Thành phần | Trạng thái hiện tại |
+| --- | --- |
+| NodeMCU 1.0 (ESP-12E Module), ESP8266 | **Đã xác nhận**; PlatformIO `nodemcuv2` |
+| BTS7960 / IBT-2-style driver | Chủ dự án nhớ là có; chưa nhìn lại model/terminal |
+| Motor DC, có thể là 12 V | Chưa xác nhận điện áp, chiều, dòng định mức/stall |
+| Cảm biến mưa dùng DO | Chưa xác nhận model, VCC, cực tính hay điện áp DO |
+| R_EN/L_EN, nguồn, GND chung, fuse | Chưa xác nhận |
+| Công tắc hành trình | Chưa thấy bằng chứng; firmware để tắt |
+
+Pin trong code là **profile ứng viên từ lịch sử repo**, không phải sơ đồ as-built:
+
+| NodeMCU | GPIO | Kết nối ứng viên | Ghi chú |
+| --- | ---: | --- | --- |
+| D1 | 5 | Rain DO | Đo điện áp/cực tính trước; GPIO không được nhận quá 3.3 V |
+| D5 | 14 | RPWM | Chưa xác nhận đầu dây và chiều |
+| D6 | 12 | LPWM | Không bao giờ hoạt động cùng RPWM |
+| D2 | 4 | Enable tùy chọn | Mặc định không dùng; tuyệt đối không nối khi EN vẫn ở 5 V |
+| D7 | 13 | Limit thu tùy chọn | Tắt; cần pull-up 3.3 V ngoài |
+| D0 | 16 | Limit che tùy chọn | Tắt; cần pull-up 3.3 V ngoài |
+
+D3/GPIO0, D4/GPIO2 và D8/GPIO15 là chân boot-strapping nên profile mặc định tránh dùng. Xem [wiring worksheet](WIRING.md) và [hardware audit](docs/HARDWARE_AUDIT.md) trước khi cắm bất cứ dây nào.
+
+## Cảnh báo nguồn và điện áp
+
+**Ngắt nguồn motor khi đấu dây. Không đưa 5 V hoặc 12 V vào bất kỳ GPIO ESP8266 nào. Không cấp motor từ NodeMCU.**
+
+Đo DO ở trạng thái khô và ướt trước khi nối D1. Xác nhận nguồn logic/motor, GND chung, cực tính, dòng stall, khả năng nguồn, fuse, tiết diện dây và công tắc ngắt khẩn cấp. R_EN/L_EN đang là điểm chưa rõ: nếu chúng thật sự được kéo lên 5 V thì D2 phải để rời; nếu muốn firmware điều khiển enable thì phải tháo hoàn toàn dây 5 V trước.
+
+## AUTO, MANUAL và các nút
+
+| Điều khiển | Nghĩa chính xác |
+| --- | --- |
+| Tự động | Xác nhận mưa rồi che; xác nhận khô lâu hơn rồi thu |
+| Thủ công | Dừng chuyển động hiện tại và chờ lệnh rõ ràng |
+| Che cây | Đưa mái che tới trạng thái `DEPLOYED`; được phép khi mưa |
+| Thu mái che | Đưa mái che tới `RETRACTED`; bị chặn nếu chưa xác nhận khô |
+| Dừng khẩn cấp | Tắt drive ngay, chuyển MANUAL và giữ STOP latch |
+| Đặt lại lỗi | Sau khi kiểm tra cơ khí/điện, xóa lỗi nhưng vẫn dừng ở MANUAL |
+
+Nếu mưa quay lại trong lúc đang thu thủ công, GreenGuard dừng, chờ dead-time rồi che cây. Nếu vị trí đang `UNKNOWN`, AUTO được phép chạy full-time theo hướng che để bảo vệ, nhưng không tự thu mù quáng.
+
+## Vị trí là ước lượng, không phải phép đo
+
+Khi chưa có limit switch, 0% và 100% chỉ là kết quả của thời gian chạy. Điện áp, tải, ma sát, trượt, vật cản và mất điện đều làm nó lệch. Dashboard ghi `ESTIMATED`; STOP giữa đường ghi `STOPPED_PARTIAL`; reboot giữa chuyển động ghi `UNKNOWN`. Nếu bạn nhìn trực tiếp một endpoint rồi đánh dấu, trạng thái là `USER_CALIBRATED`. Chỉ switch đã bật và đang tác động mới là `LIMIT_CONFIRMED`.
+
+Đây là chỗ tụi mình từng loay hoay khá lâu :3 — biến “motor chạy 30 giây” thành “mái che chắc chắn đã tới nơi” là một kết luận sai nếu không có feedback vật lý.
+
+## Cấu trúc repo
+
+```text
+include/                   cấu hình phần cứng, persistence, secrets example
+src/                       tích hợp ESP8266, Wi-Fi, LittleFS, REST
+lib/GreenGuardCore/src/    state machine C++ không phụ thuộc phần cứng
+data/                      dashboard được nạp vào LittleFS
+test/test_core/            mô phỏng controller native
+test/web.test.mjs          protocol, DOM contract, auth và integration mock
+scripts/                   project check và server preview
+docs/                      audit, thiết kế, protocol, test, checklist vật lý
+```
+
+## Chuẩn bị môi trường
+
+1. Cài [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/index.html) hoặc PlatformIO IDE.
+2. Dùng Node.js 20+ để chạy test web; repo không cần `npm install` vì test chỉ dùng module có sẵn của Node.
+3. Native test trên Windows cần `g++`/MinGW trong `PATH`.
+4. Sao chép `include/secrets.example.h` thành `include/secrets.h`:
 
 ```cpp
 #define WIFI_SSID "ten-wifi"
 #define WIFI_PASSWORD "mat-khau"
-#define THINGSPEAK_CHANNEL_ID 123456
-#define THINGSPEAK_WRITE_API_KEY "write-key"
+#define CONTROL_TOKEN "mot-token-ngau-nhien-dai"
 ```
 
-Trong ThingSpeak tạo channel với tám field: **Rain DO Level (0 LOW, 1 HIGH)**, **Rain Stable (0 dry, 1 wet)**, **Curtain Position %**, **Mode (0 auto, 1 manual)**, **Rain Event Count**, **Motor State**, **WiFi RSSI**, **Error Code**. Firmware dùng đúng một `writeFields()` mỗi chu kỳ tối thiểu 20 giây.
+`include/secrets.h` đã nằm trong `.gitignore`. Đừng paste token hoặc mật khẩu vào issue, ảnh Serial hay commit.
+
+## Build và test
 
 ```powershell
-pio run
-pio run -t upload
-pio run -t uploadfs
-pio device monitor
+pio run -e nodemcuv2
+pio run -e nodemcuv2 -t buildfs
+pio test -e native
+npm test
+npm run check
 ```
 
-Phải nạp cả firmware và LittleFS. Nếu `pio` không có trong terminal thường, dùng các nút Build, Upload, Upload Filesystem Image và Monitor trên thanh công cụ PlatformIO. Khi Wi-Fi kết nối, mở `http://greenguard.local`; nếu mDNS không hoạt động, dùng IP in trên Serial Monitor. Firmware không in mật khẩu/API key.
+Build đã chạy ngày 2026-08-26 cho đúng môi trường:
 
-Khi thay đổi code firmware phải nạp lại firmware bằng `pio run -t upload`. Khi thay đổi giao diện web trong `data/` phải nạp lại LittleFS bằng `pio run -t uploadfs`.
+```ini
+[env:nodemcuv2]
+board = nodemcuv2
+```
 
-## Hiệu chuẩn
+Kết quả hiện tại: firmware PASS, LittleFS PASS, 45/45 scenario controller (132 assertions) và 11/11 test web/protocol/integration (52 assertions). Tổng cộng 56 test case/scenario và 184 assertions. RAM 31,720/81,920 byte (38.7%); flash 382,923/1,044,464 byte (36.7%). Xem lệnh và giới hạn cụ thể trong [test results](docs/TEST_RESULTS.md).
 
-Chỉ nối DO vào D1/GPIO5; AO để hở và A0 không dùng. Làm cảm biến khô rồi làm ướt ở mức cần phát hiện, đồng thời chỉnh biến trở trên module để DO đổi trạng thái chắc chắn. Dashboard hiển thị trực tiếp mức `HIGH/LOW` và trạng thái ngõ vào. Phần lớn module xuất LOW khi ướt nên `rainDigitalActiveLow` mặc định là `true`; nếu module của bạn xuất HIGH khi ướt, bỏ chọn mục **DO ở mức LOW khi có mưa**. Firmware vẫn yêu cầu trạng thái mưa liên tục 3 giây và khô liên tục 30 giây trước khi đổi trạng thái ổn định, giúp chống rung tín hiệu.
+## Nạp firmware và dashboard
 
-Đo vài lần thời gian rèm chạy hết hành trình rồi đặt `fullTravelTimeMs` (5–60 giây). Đưa rèm thật tới đầu hành trình và bấm **Đặt là Mở hoàn toàn** hoặc **Đặt là Đóng hoàn toàn**. Vị trí chỉ được suy ra từ thời gian: `thời gian = hành trình đầy đủ × khoảng cách % / 100`. Sai số tích lũy do điện áp, tải, ma sát, pin, PWM, trượt hoặc vật cản; hãy hiệu chuẩn lại khi vị trí hiển thị lệch thực tế. 30 giây chỉ là ban đầu, không tăng dư quá mức vì motor có thể tiếp tục ép cơ cấu ở cuối hành trình.
+Chỉ chọn đúng cổng sau khi đã nhận diện board. Lần nạp đầu vẫn phải để motor tháo rời và dry-run bật:
 
-AUTO đóng ở WET ổn định và mở ở DRY ổn định. MANUAL gồm Mở, Đóng, Dừng; nút AUTO quay lại tự động. Khi vị trí UNKNOWN, mở/đóng cần xác nhận và chạy trọn hành trình; AUTO không chạy. Sau timeout: xóa lỗi, kiểm tra cơ khí, đưa rèm tới một đầu và hiệu chuẩn. Sau mất điện giữa chuyển động cũng phải hiệu chuẩn. Công tắc hành trình hoặc encoder chính xác hơn nhưng không thuộc phiên bản này; điều khiển thời gian không thể phát hiện kẹt.
+```powershell
+pio run -e nodemcuv2 -t upload
+pio run -e nodemcuv2 -t uploadfs
+pio device monitor -b 115200
+```
 
-## Danh sách kiểm thử bắt buộc
+Firmware và filesystem là hai image riêng: đổi code thì upload firmware; đổi file trong `data/` thì upload filesystem. `uploadfs` ghi lại phân vùng LittleFS nên có thể làm mất state/config đang lưu; tháo motor và chuẩn bị hiệu chuẩn lại trước khi nạp. Khi Wi‑Fi kết nối, mở `http://greenguard.local`; nếu mDNS không chạy trên máy của bạn, dùng địa chỉ IP in ở Serial Monitor.
 
-1. Khởi động khi tháo motor; đo RPWM và LPWM đều LOW trong khởi động. R_EN/L_EN nối cố định 5 V nên luôn HIGH; D7 không dùng.
-2. Quan sát mức DO khi khô và ướt; chỉnh biến trở và `rainDigitalActiveLow`; kiểm tra xác nhận WET 3 s và DRY 30 s.
-3. Đưa rèm mở hẳn, bấm **Đặt là Mở hoàn toàn**.
-4. Close khoảng 2 s rồi Stop; motor phải dừng ngay và vị trí phải đổi.
-5. Kiểm tra hai chiều; nếu sai bật `motorDirectionReversed`.
-6. Close đầy đủ, dừng gần 30 s; hiệu chuẩn đóng; Open đầy đủ.
-7. Open/Close, dừng gần 15 s: vị trí gần 50%; chạy tiếp chỉ dùng thời gian còn lại.
-8. Đảo chiều và đo khoảng ngắt ít nhất 500 ms.
-9. Khởi động lại khi file đánh dấu chuyển động đang chạy: vị trí UNKNOWN, AUTO không chạy; hiệu chuẩn rồi kiểm tra AUTO chạy lại.
-10. Tạo mưa: tự đóng; làm khô: phải ổn định 30 s mới mở.
-11. Ngắt Wi-Fi: logic AUTO vẫn hoạt động; nối lại: ThingSpeak gửi tiếp.
-12. Tạo timeout: motor dừng, lỗi `MOTOR_TIMEOUT`, vị trí UNKNOWN; xóa lỗi không được tự chạy.
+## Test an toàn lần đầu
 
-## Khắc phục sự cố.
+1. Tháo motor và ngắt nguồn công suất.
+2. Giữ `ACTUATOR_DRY_RUN=true`; đo RPWM/LPWM đều LOW lúc boot và khi bấm lệnh.
+3. Đo DO, kiểm tra khô/ướt và cực tính riêng.
+4. Nạp LittleFS, mở dashboard, thử token/AUTO/MANUAL/STOP riêng.
+5. Hoàn thành [hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md).
+6. Chỉ sau review phần điện mới thử một xung ngắn không tải, với emergency disconnect trong tầm tay.
 
-- Không có dashboard: kiểm tra SSID, IP Serial, nạp `uploadfs`, cùng mạng LAN; thử IP thay mDNS.
-- Motor không chạy: kiểm tra nguồn 12 V tại B+/B-, 5 V logic tại VCC và cả R_EN/L_EN, GND chung, cầu chì, hai tín hiệu PWM và lỗi dashboard.
-- Chiều sai: đổi `motorDirectionReversed`, không cần đổi dây.
-- Mưa đảo: đổi `rainDigitalActiveLow`; chỉnh biến trở module nếu DO dao động hoặc không chuyển mức.
-- Vị trí trôi: đo lại thời gian, kiểm tra tải/nguồn và hiệu chuẩn đầu hành trình.
-- ThingSpeak lỗi: kiểm tra channel ID/write key và Wi-Fi; điều khiển cục bộ vẫn tiếp tục.
+Nhớ test từng phần trước nha 🔧. Đừng nối cảm biến, driver, motor và nguồn công suất cùng một lúc rồi mới bắt đầu debug.
 
-Luôn thử không tải trước. Dùng dây đủ tiết diện, cầu chì và công tắc ngắt khẩn cấp. Không bao giờ nối 12 V vào NodeMCU hoặc VCC logic BTS7960.
+## Dashboard và protocol
+
+ESP8266 phục vụ HTML/CSS/JS từ LittleFS. Mỗi POST có request ID; status tách `ACCEPTED`, `STARTED`, `COMPLETED`, `STOPPED`, `REJECTED`, `FAULT`. UI bỏ qua acknowledgement sai ID, khóa double-click và không hiển thị thành công nếu 90 giây vẫn chưa có phase kết thúc. Chi tiết ở [protocol v2](docs/PROTOCOL.md).
+
+Một mock server cho phép xem UI mà không có board:
+
+```powershell
+npm run preview
+# mở http://127.0.0.1:4173 và dùng token test-token-1234
+```
+
+Browser backend của phiên rebuild không khả dụng, nên repo không thêm screenshot và không tuyên bố đã visual QA bằng browser. Responsive/DOM/accessibility contracts và flow tương tác đã được test tự động; vẫn nên mở mock preview trên desktop lẫn điện thoại trước demo.
+
+## Đã test vật lý gì?
+
+Không có board/serial nào được xác nhận hoặc flash trong đợt rebuild này. Không cấp điện motor, không đo cảm biến, không xác nhận chiều, endpoint, nguồn hay full-travel. Controller model được xác nhận từ thông tin chính thức của chủ dự án, không phải vì Codex nhìn thấy board.
+
+## Giới hạn và nâng cấp nên làm
+
+- Thêm hai limit switch để endpoint thành dữ liệu thật.
+- Thêm current sensor/stall detection, fuse đúng dòng và emergency disconnect vật lý.
+- Đo/level-shift rain DO; cải thiện nguồn, lọc nhiễu, dây và enclosure chống mưa.
+- Token HTTP chỉ phù hợp LAN tin cậy, không phải bảo mật Internet.
+- Cảm biến DO một bit không tự phát hiện được mọi kiểu sensor hỏng.
+
+## Tài liệu
+
+- [Hardware audit](docs/HARDWARE_AUDIT.md)
+- [System design](docs/SYSTEM_DESIGN.md)
+- [Protocol](docs/PROTOCOL.md)
+- [Hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md)
+- [Automated test results](docs/TEST_RESULTS.md)
+- [Wiring worksheet](WIRING.md)
+
+## Team
+
+Lịch sử Git hiện có commit thật từ:
+
+- [`quanle0709`](https://github.com/quanle0709) — owner của repository; lịch sử có initial implementation và cập nhật hardware wiring.
+- [`minhkhoi092211`](https://github.com/minhkhoi092211) — lịch sử có commit thêm archive web/IoT.
+- [`nhiennguyenquoc`](https://github.com/nhiennguyenquoc) — lịch sử có các commit README, gồm commit `18a98b3` ngay trước rebuild.
+
+Repo không đủ bằng chứng để tụi mình tự gán vai trò chi tiết hơn. GitHub chỉ liên kết contributor khi commit dùng email đã gắn/xác minh với đúng tài khoản (hoặc một PR/commit thật từ tài khoản đó). Không cần và không nên tạo commit rỗng hay ghi co-author giả để “làm đẹp” bảng Contributors.
+
+## Một lời nhắn nhỏ
+
+Phiên bản đầu gần như chắc chắn sẽ có dây cắm nhầm, DO bị đảo hoặc thời gian motor chưa đúng — chuyện đó không có nghĩa ý tưởng thất bại. Tách nhỏ ra: test sensor, web, rồi driver/motor không tải. Ghi lại từng phép đo, sửa một thứ mỗi lần và luôn giữ cách ngắt điện trong tầm tay. Nếu bạn cũng muốn thử, cứ học từ repo này rồi làm nó chắc hơn nhé; bọn mình rất muốn thấy GreenGuard có limit switch thật ở phiên bản tiếp theo :)))

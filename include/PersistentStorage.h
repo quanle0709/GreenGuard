@@ -1,10 +1,20 @@
 #pragma once
-#include "types.h"
+
 #include <ArduinoJson.h>
+
+#include "DeviceConfig.h"
+#include "GreenGuardCore.h"
+
+enum class LoadResult : uint8_t { MISSING = 0, VALID = 1, INVALID = 2 };
+
 class PersistentStorage {
  public:
-  bool begin(); bool loadConfig(AppConfig&); bool saveConfig(const AppConfig&);
-  bool loadState(PersistentState&); bool saveState(const PersistentState&);
-  static bool validateConfig(const AppConfig&);
- private: bool atomicWrite(const char*, const JsonDocument&);
+  bool begin();
+  LoadResult loadConfig(DeviceConfig& config);
+  bool saveConfig(const DeviceConfig& config);
+  LoadResult loadSnapshot(greenguard::Snapshot& snapshot);
+  bool saveSnapshot(const greenguard::Snapshot& snapshot);
+
+ private:
+  bool atomicWrite(const char* path, const JsonDocument& document);
 };

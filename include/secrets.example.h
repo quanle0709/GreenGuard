@@ -1,7 +1,11 @@
 #pragma once
 
-#define WIFI_SSID "YOUR_WIFI_NAME"
-#define WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
-#define THINGSPEAK_CHANNEL_ID 0
-#define THINGSPEAK_WRITE_API_KEY "YOUR_WRITE_API_KEY"
+// Copy this file to include/secrets.h and keep secrets.h out of Git.
+// Empty Wi-Fi values keep the controller offline while local automation continues.
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
+
+// Optional local command token. When empty, LAN control is deliberately unauthenticated.
+// Use a long random value before putting GreenGuard on a shared network.
+#define CONTROL_TOKEN ""
 
