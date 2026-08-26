@@ -26,7 +26,7 @@ NodeMCU 1.0 Module ESP8266, module cảm biến mưa RainDrop, motor DC giảm t
 | D7 | Không sử dụng |
 | A0 | Không sử dụng |
 
-Hai chân Enable luôn được bật bằng 5 V. Firmware không điều khiển Enable và dừng motor bằng cách đưa cả RPWM lẫn LPWM về 0. Không nối R_EN/L_EN đồng thời vào 5 V và ESP8266. Cấu hình phần cứng này đã được kiểm tra bằng code test và motor đã chạy thành công.
+Hai chân R_EN và L_EN luôn được kéo lên 5 V. Firmware không điều khiển Enable và dừng motor bằng cách đưa cả RPWM lẫn LPWM về 0. Không nối R_EN/L_EN đồng thời vào 5 V và ESP8266. Cấu hình phần cứng này đã được kiểm tra bằng code test và motor đã chạy thành công.
 
 ## Cấu trúc
 
