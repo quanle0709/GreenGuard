@@ -48,12 +48,14 @@ Pin trong code là **profile ứng viên từ lịch sử repo**, không phải 
 
 | NodeMCU | GPIO | Kết nối ứng viên | Ghi chú |
 | --- | ---: | --- | --- |
-| D1 | 5 | Rain DO | Đo điện áp/cực tính trước; GPIO không được nhận quá 3.3 V |
+| D1 | 5 | RainDrop DO | Đo điện áp/cực tính trước; GPIO không được nhận quá 3.3 V |
+| Vin|   | RainDrop VCC|
+| GND|    | RainDrop GND|
 | D5 | 14 | RPWM | Chưa xác nhận đầu dây và chiều |
 | D6 | 12 | LPWM | Không bao giờ hoạt động cùng RPWM |
 | D2 | 4 |R_EN VÀ L_EN tùy chọn | Mặc định không dùng; tuyệt đối không nối khi EN vẫn ở 5 V |
 |Vin|   | 5V OUT+ XL4005 |
-|VCC|   | GND OUT- XL4005|
+|GND|   | OUT- XL4005|
 
 D3/GPIO0, D4/GPIO2 và D8/GPIO15 là chân boot-strapping nên profile mặc định tránh dùng. Xem [wiring worksheet](WIRING.md) và [hardware audit](docs/HARDWARE_AUDIT.md) trước khi cắm bất cứ dây nào.
 
