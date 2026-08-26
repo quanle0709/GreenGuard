@@ -1,6 +1,6 @@
 # GreenGuard
 
-GreenGuard là bộ rèm bảo vệ cây tự động dùng NodeMCU ESP-12E, ngõ số DO của cảm biến mưa, cầu H HW-039/BTS7960, dashboard nội bộ và ThingSpeak. Điều khiển motor, xác nhận mưa/khô, timeout và AUTO đều chạy tại chỗ; mất Internet hoặc ThingSpeak không làm mất chức năng bảo vệ.
+GreenGuard là bộ rèm bảo vệ cây tự động dùng NodeMCU module ESP8266, ngõ số DO của cảm biến mưa, cầu H HW-039/BTS7960, dashboard nội bộ và ThingSpeak. Điều khiển motor, xác nhận mưa/khô, timeout và AUTO đều chạy tại chỗ; mất Internet hoặc ThingSpeak không làm mất chức năng bảo vệ.
 
 ## Tính năng
 
@@ -14,7 +14,7 @@ GreenGuard là bộ rèm bảo vệ cây tự động dùng NodeMCU ESP-12E, ng�
 
 ## Phần cứng và phần mềm
 
-NodeMCU 1.0 ESP-12E, module cảm biến mưa có DO, motor DC 12 V, HW-039/BTS7960, nguồn 12 V phù hợp, nguồn logic 5 V, cầu chì và dây điện đúng dòng. Cài VS Code, PlatformIO IDE hoặc PlatformIO Core. Xem [WIRING.md](WIRING.md) trước khi cấp nguồn.
+NodeMCU 1.0 Module ESP8266, module cảm biến mưa có DO, motor DC 12 V, HW-039/BTS7960, nguồn 12 V phù hợp, nguồn logic 5 V, cầu chì và dây điện đúng dòng. Cài VS Code, PlatformIO IDE hoặc PlatformIO Core. Xem [WIRING.md](WIRING.md) trước khi cấp nguồn.
 
 | Kết nối | Chức năng |
 |---|---|
