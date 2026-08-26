@@ -14,7 +14,7 @@ GreenGuard là bộ rèm bảo vệ cây tự động dùng NodeMCU module ESP82
 
 ## Phần cứng và phần mềm
 
-NodeMCU 1.0 Module ESP8266, module cảm biến mưa có DO, motor DC 12 V, HW-039/BTS7960, nguồn 12 V phù hợp, nguồn logic 5 V, cầu chì và dây điện đúng dòng. Cài VS Code, PlatformIO IDE hoặc PlatformIO Core. Xem [WIRING.md](WIRING.md) trước khi cấp nguồn.
+NodeMCU 1.0 Module ESP8266, module cảm biến mưa RainDrop, motor DC giảm tốc 2vòng/ phút 12 V DC,Driver cao áp HW-039/BTS7960, nguồn 12 V 10A Tổ ong,Hạ Áp LM2596 cho nguồn logic 5 V DC, cầu chì và dây điện đúng dòng. Cài VS Code, PlatformIO IDE hoặc PlatformIO Core. Xem [WIRING.md](WIRING.md) trước khi cấp nguồn.
 
 | Kết nối | Chức năng |
 |---|---|
