@@ -1,172 +1,194 @@
 # 🌿 GreenGuard
 
-GreenGuard là mái che cây tự động chạy trên **NodeMCU 1.0 (ESP-12E Module / ESP8266)**, đọc cảm biến mưa và điều khiển motor để che hoặc thu mái che. Đây là sản phẩm cuối khóa do các bạn học viên trực tiếp lắp ráp, tích hợp, debug và kiểm thử sau ba tháng làm quen với embedded systems.
+GreenGuard is an automatic plant-protection shield built around a **NodeMCU 1.0 (ESP-12E Module / ESP8266)**. It reads a digital rain sensor and drives a motor to deploy or retract the shield. The completed prototype was the final hands-on output of a three-month introductory embedded-systems course.
 
-## GreenGuard bắt đầu từ đâu?
+## How GreenGuard Began
 
-GreenGuard bắt đầu từ một khóa học nhập môn embedded systems kéo dài ba tháng. Minh Quân khởi xướng và trực tiếp hướng dẫn khóa học cho một nhóm nhỏ bạn bè cũng là học viên của mình. Mục tiêu không phải tạo một startup hay một sản phẩm thương mại, mà là giúp các bạn hiểu nền tảng hệ thống nhúng bằng trải nghiệm thật trước khi chọn ngành học đại học.
+GreenGuard began as a small course for friends who were also learners. The tutors represented by [`quanle0709`](https://github.com/quanle0709) and [`nhiennguyenquoc`](https://github.com/nhiennguyenquoc) initiated and guided the learning experience as embedded-systems tutors, instructors, project mentors, and technical guides.
 
-Tụi mình học theo cách **learning by building — học bằng cách tự tay làm**. Minh Quân thiết kế và dẫn dắt quá trình học, giải thích nguyên lý, đưa ra định hướng kỹ thuật, hỗ trợ giải quyết vấn đề và giám sát lúc tích hợp, kiểm thử. Các học viên không chỉ đứng xem: sau ba tháng học và khám phá, các bạn trực tiếp biến từng phần đã học thành prototype GreenGuard hoàn chỉnh dưới sự hướng dẫn của Minh Quân.
+The purpose was not to create a startup, commercial product, or formal research invention. It was to help a learner understand embedded systems through practice and see what studying a related university field might actually involve.
 
-GreenGuard vì vậy vừa là một hệ thống thật, vừa là bài tổng kết để cả nhóm trả lời câu hỏi: “Một cảm biến, một vi điều khiển, một driver và một motor phối hợp với nhau ngoài đời như thế nào?” Câu trả lời có nhiều dây hơn tụi mình tưởng :)))
+## Learning by Building
 
-## Tụi mình muốn học được gì?
+Our group learned by connecting each concept to something physical. The tutors shaped the learning process, explained the underlying ideas, provided technical direction, helped solve problems, and supervised integration and testing. The learner was not a passive observer: after three months of learning and experimenting, the learner directly built, integrated, debugged, and tested the final GreenGuard prototype under their guidance.
 
-Qua quá trình làm GreenGuard, các học viên được tiếp xúc thực tế với:
+GreenGuard became our way of answering a practical question: how do a sensor, a microcontroller, a motor driver, and a real mechanism work together? The answer involved more wiring than we first expected :)))
 
-- Vai trò của microcontroller trong một hệ thống nhúng.
-- Cách đọc tín hiệu số từ cảm biến và nối đầu vào đó với hành vi của cơ cấu chấp hành.
-- Cách điều khiển motor DC thông qua driver BTS7960/HW-039.
-- GPIO, mức điện áp, nguồn riêng cho motor và khái niệm GND chung.
-- Firmware phản ứng với tín hiệu ngoài đời mà không khóa vòng lặp.
-- Sự khác nhau giữa điều khiển AUTO và MANUAL.
-- Tích hợp firmware với dashboard web chạy trong mạng nội bộ.
-- Debug phần cứng và phần mềm như một hệ thống duy nhất.
-- Đo điện áp, dòng điện, timing và nhiệt độ thay vì đoán hệ thống “có vẻ ổn”.
-- Một góc nhìn thực tế về việc học embedded systems và các ngành kỹ thuật liên quan.
+### What the Learner Practiced
 
-## Sản phẩm cuối khóa làm được gì?
+- Understanding the role of a microcontroller in an embedded system.
+- Reading a digital sensor signal and connecting that input to actuator behavior.
+- Controlling a DC motor through a BTS7960/HW-039 motor driver.
+- Working with GPIO, voltage levels, motor power, and a shared logic reference.
+- Writing firmware that reacts to real-world input without blocking its main loop.
+- Distinguishing automatic control from manual control.
+- Integrating firmware with a local web dashboard.
+- Debugging hardware and software as one system.
+- Measuring voltage, current, timing, and temperature instead of assuming the system is safe.
+- Getting a realistic first look at embedded systems and related engineering fields.
 
-- Lọc nhiễu DO không chặn chương trình: mặc định xác nhận ướt 3 giây và xác nhận khô 120 giây.
-- AUTO tự che cây khi mưa; chỉ tự thu khi khô ổn định và đang có ước lượng vị trí.
-- MANUAL có lệnh rõ nghĩa: **Che cây**, **Thu mái che**, **Dừng khẩn cấp**, **Đặt lại lỗi**.
-- Ngắt cả hai PWM trước khi đổi chiều và chờ dead-time cấu hình 300 ms.
-- Giới hạn thời gian motor, khóa lỗi, lưu trạng thái bằng LittleFS và chuyển về `UNKNOWN` nếu khởi động lại giữa lúc chạy.
-- Dashboard tiếng Việt chạy trực tiếp trên ESP8266, responsive cho điện thoại, có request ID và trạng thái nhận/bắt đầu/hoàn tất riêng.
-- Có token điều khiển LAN tùy chọn và vẫn chạy logic AUTO khi Wi‑Fi hoặc trình duyệt mất kết nối.
-- Chống gửi lặp do double-click hoặc acknowledgement đến trễ.
+## The Final Course Project
 
-Repository công khai luôn giữ `ACTUATOR_DRY_RUN=true`: state machine vẫn chạy nhưng RPWM, LPWM và enable do firmware điều khiển luôn LOW. Prototype thật được kiểm thử bằng một cấu hình local đã bật actuator; cấu hình đó không được commit và không chứa thông tin cần công khai.
+The learner assembled the mechanical structure, integrated the electronics and firmware, worked through faults, and helped test the completed prototype. It definitely did not work immediately on the first attempt :3, which made the debugging part just as valuable as the finished result.
 
-## Luồng hệ thống
+<p align="center">
+  <img src="docs/images/greenguard-prototype-overview.png" width="760" alt="Angled overview of the completed GreenGuard prototype with its transparent shield, circular frame, supports, and central drive mechanism">
+</p>
+<p align="center"><em>The completed GreenGuard prototype after three months of embedded-systems learning and hands-on development.</em></p>
+
+## What GreenGuard Can Do
+
+- Qualify rain input without blocking: the defaults require 3 seconds of wet input and 120 seconds of dry input.
+- In AUTO, deploy the shield after a qualified wet state; retract only after a qualified dry state when a position estimate is available.
+- In MANUAL, provide explicit deploy, retract, Emergency Stop, and Reset Fault commands.
+- Switch both PWM paths off before changing direction and enforce a configured 300 ms reversal dead-time.
+- Apply a motor-runtime limit, fault lockout, LittleFS state persistence, and `UNKNOWN` recovery after an interrupted movement.
+- Serve a responsive Vietnamese dashboard directly from the ESP8266 with request IDs and separate received, started, and completed phases.
+- Optionally require a LAN control token while keeping AUTO protection local when Wi-Fi or the browser is unavailable.
+- Resist duplicate actions caused by double-clicks or delayed acknowledgements.
+
+The public repository intentionally keeps `ACTUATOR_DRY_RUN=true`. The state machine runs, but RPWM, LPWM, and any firmware-controlled enable output remain LOW. The physical prototype test used a local actuator-enabled configuration that was not committed.
+
+## How It Works
 
 ```text
 RainDrop DO
-      │
-      v
-xác nhận WET/DRY ──> state machine ESP8266 ──> interlock + timeout ──> BTS7960 ──> motor
+     │
+     v
+qualify WET/DRY ──> ESP8266 state machine ──> interlock + timeout ──> BTS7960 ──> motor
                               │
-                              ├──> trạng thái/cấu hình LittleFS
-                              └──> REST API + dashboard trong cùng mạng LAN
+                              ├──> LittleFS state and configuration
+                              └──> REST API + dashboard on the local network
 ```
 
-Browser chỉ quan sát và gửi yêu cầu. ESP8266 mới là nơi quyết định lệnh có hợp lệ hay không; dashboard không được phép coi “HTTP đã nhận” là “mái che đã chạy xong”.
+The browser observes state and submits requests. The ESP8266 decides whether a command is valid. The dashboard must never treat “HTTP request received” as “the shield finished moving.”
 
-## Prototype thật và kết quả đo
+## Physical Prototype
 
-Firmware dựa trên commit [`441f91e`](https://github.com/quanle0709/GreenGuard/commit/441f91ea89253d85c3314e3da47faa3d03afb850) đã được nạp vào NodeMCU 1.0 ESP-12E và kiểm thử trên prototype hoàn chỉnh ngày **2026-08-26**. Các giá trị dưới đây là kết quả đo do chủ dự án cung cấp, không phải ước lượng:
+<p align="center">
+  <img src="docs/images/greenguard-prototype-front.png" width="620" alt="Front view of the completed GreenGuard prototype showing its circular frame, transparent shield material, supporting posts, and actuation components">
+</p>
+<p align="center"><em>A front view of the prototype showing its mechanical frame and shield-driving components.</em></p>
 
-| Hạng mục | Kết quả |
+These owner-supplied photographs show that a completed physical prototype exists. They are not standalone proof of the ten-cycle test, the electrical measurements, or every system function; the recorded validation results below are the evidence for those claims.
+
+## Measured Validation
+
+Firmware based on commit [`441f91e`](https://github.com/quanle0709/GreenGuard/commit/441f91ea89253d85c3314e3da47faa3d03afb850) was flashed to the confirmed NodeMCU 1.0 ESP-12E and tested on the completed prototype on **2026-08-26**. The owner supplied the following measurements; they are not estimates:
+
+| Measurement | Result |
 | --- | ---: |
-| Kiểm thử che–thu liên tục | 10 chu kỳ với tải cơ khí thật |
-| Điện áp nguồn motor trước khi chạy | 12.18 V |
-| Điện áp nguồn motor khi đang chạy | 11.72 V |
-| Độ sụt áp nguồn | 3.8% |
-| Mức thấp nhất của rail 3V3 khi motor khởi động | 3.17 V |
-| NodeMCU reset trong quá trình kiểm thử | Không có |
-| Rain sensor DO khi khô | 3.27 V |
-| Rain sensor DO khi ướt | 0.08 V |
-| Logic cảm biến mưa | Active-LOW |
-| Dòng motor khi chuyển động có tải bình thường | 2.63 A |
-| Dòng khởi động lớn nhất đo được | 7.20 A |
-| Dead-time đảo chiều đo được | 307 ms |
-| Nhiệt độ motor cao nhất sau 10 chu kỳ | 51°C |
-| Nhiệt độ dây và connector sau 10 chu kỳ | 34°C |
-| Đánh giá tổng thể | **PASS có điều kiện trong phạm vi kiểm thử này** |
+| Continuous deploy–retract testing | 10 cycles with the real mechanical load |
+| Motor supply before movement | 12.18 V |
+| Motor supply during movement | 11.72 V |
+| Supply voltage drop | 3.8% |
+| Lowest 3V3 rail during motor startup | 3.17 V |
+| NodeMCU resets during testing | None |
+| Rain sensor DO when dry | 3.27 V |
+| Rain sensor DO when wet | 0.08 V |
+| Rain sensor logic | Active-LOW |
+| Motor current during loaded movement | 2.63 A |
+| Maximum measured startup current | 7.20 A |
+| Measured reversal dead-time | 307 ms |
+| Highest motor temperature after 10 cycles | 51°C |
+| Wire and connector temperature after 10 cycles | 34°C |
+| Overall evaluation | **PASS with conditions within this test scope** |
 
-Prototype đã vượt qua quan sát chức năng và điện trong 10 chu kỳ che–thu liên tiếp dưới tải thật. Rail 3V3 duy trì đủ ổn định trong các lần khởi động được quan sát và NodeMCU không reset. DO của RainDrop được xác nhận active-LOW, với cả mức khô lẫn ướt nằm trong dải điện áp GPIO ESP8266 trong lần test này. Dead-time 307 ms cũng bám sát mục tiêu cấu hình 300 ms.
+The prototype passed functional and electrical observation for 10 consecutive loaded deploy–retract cycles. The 3V3 rail remained stable enough during the observed startup events, and the NodeMCU did not reset. RainDrop DO was confirmed as active-LOW and remained within the ESP8266 GPIO voltage range during this test. The measured 307 ms reversal dead-time closely matched the configured 300 ms target.
 
-“PASS có điều kiện” rất quan trọng: 10 chu kỳ chưa chứng minh độ bền dài hạn, khả năng chống mưa ngoài trời, ingress protection, mọi tình huống vật cản hay độ tin cậy trong toàn bộ vòng đời. Tụi mình không biến một buổi test tốt thành lời hứa “an toàn tuyệt đối”.
+“PASS with conditions” matters. Ten cycles do not establish long-term endurance, outdoor weather resistance, ingress protection, every obstruction condition, or full-lifetime reliability. A successful test session should not be turned into a claim that the prototype is fully safe or commercially proven.
 
-## Phần cứng đã dùng
+## Hardware
 
-| Thành phần | Trạng thái |
+| Component | Status |
 | --- | --- |
-| NodeMCU 1.0 (ESP-12E Module), ESP8266 | Đã xác nhận; PlatformIO `nodemcuv2` |
-| BTS7960 / driver HW-039 | Đã xác nhận trên prototype |
-| Motor DC giảm tốc 12 V | Đã xác nhận trên prototype |
-| Cảm biến mưa RainDrop dùng DO active-LOW | Đã xác nhận; đo 3.27 V khô và 0.08 V ướt |
-| Nguồn tổ ong 12 V, 10 A | Đã xác nhận trên prototype |
-| Module hạ áp XL4005 | Đã xác nhận trên prototype |
-| Công tắc hành trình | Chưa có thông tin xác nhận; firmware để tắt |
+| NodeMCU 1.0 (ESP-12E Module), ESP8266 | Confirmed; PlatformIO `nodemcuv2` |
+| BTS7960 / HW-039 motor driver | Confirmed on the prototype |
+| 12 V DC geared motor | Confirmed on the prototype |
+| RainDrop rain sensor using active-LOW DO | Confirmed; measured at 3.27 V dry and 0.08 V wet |
+| 12 V, 10 A power supply | Confirmed on the prototype |
+| XL4005 step-down module | Confirmed on the prototype |
+| Limit switches | Not confirmed; disabled in firmware |
 
-### Wiring vẫn cần được ghi lại chính xác
+### Wiring Still Needs an As-Built Record
 
-Các phép đo xác nhận prototype hoạt động, nhưng chưa cung cấp một bảng as-built đầy đủ cho từng dây. Pin trong code vẫn là profile ứng viên từ lịch sử repository:
+The physical test confirms that the prototype operated, but the owner has not yet supplied a complete pin-to-terminal as-built table. The code therefore remains the reference for candidate GPIO assignments, not proof of every physical wire:
 
-| NodeMCU | GPIO | Kết nối ứng viên | Trạng thái tài liệu |
+| NodeMCU | GPIO | Candidate connection | Documentation status |
 | --- | ---: | --- | --- |
-| D1 | 5 | RainDrop DO | Điện áp và active-LOW đã đo; chân thực tế chưa được ghi lại bằng bảng as-built |
-| D5 | 14 | BTS7960 RPWM | Mapping trong firmware; terminal thực tế cần được ghi lại |
-| D6 | 12 | BTS7960 LPWM | Mapping trong firmware; terminal thực tế cần được ghi lại |
-| D2 | 4 | Enable R_EN/L_EN tùy chọn | Mặc định firmware không điều khiển; wiring EN thực tế chưa được cung cấp |
-| D7 | 13 | Limit thu tùy chọn | Tắt; chưa xác nhận có switch |
-| D0 | 16 | Limit che tùy chọn | Tắt; chưa xác nhận có switch |
+| D1 | 5 | RainDrop DO | Voltage and active-LOW behavior measured; physical pin record still needed |
+| D5 | 14 | BTS7960 RPWM | Firmware mapping; actual terminal wire still needs to be recorded |
+| D6 | 12 | BTS7960 LPWM | Firmware mapping; actual terminal wire still needs to be recorded |
+| D2 | 4 | Optional R_EN/L_EN control | Firmware control disabled; actual enable wiring not supplied |
+| D7 | 13 | Optional retracted limit | Disabled; switch presence not confirmed |
+| D0 | 16 | Optional deployed limit | Disabled; switch presence not confirmed |
 
-D3/GPIO0, D4/GPIO2 và D8/GPIO15 là các chân boot-strapping nên profile mặc định tránh dùng. Xem [wiring worksheet](WIRING.md) và [hardware audit](docs/HARDWARE_AUDIT.md) trước khi sửa dây hoặc thay đổi cấu hình output.
+D3/GPIO0, D4/GPIO2, and D8/GPIO15 are ESP8266 boot-strapping pins, so the default profile avoids them. Read the [wiring worksheet](WIRING.md) and [hardware audit](docs/HARDWARE_AUDIT.md) before changing wiring or output configuration.
 
-## Cảnh báo nguồn và điện áp
+## Wiring and Electrical Safety
 
-**Ngắt nguồn motor khi đấu dây. Không đưa 5 V hoặc 12 V vào bất kỳ GPIO ESP8266 nào. Không cấp motor từ NodeMCU.**
+**Disconnect motor power before changing wiring. Never apply 5 V or 12 V to an ESP8266 GPIO. Never power the motor from the NodeMCU.**
 
-Các giá trị đã đo chỉ mô tả prototype trong 10 chu kỳ thử nghiệm ngày 2026-08-26. Dòng 7.20 A là dòng khởi động lớn nhất quan sát được, không phải kết quả stall test. Chưa có kết quả được cung cấp cho stall, vật cản, fuse rating, tiết diện dây, chống nước hoặc chạy dài hạn.
+The measured values describe the prototype during 10 cycles on 2026-08-26. The 7.20 A value is the highest observed startup current, not a stall-current result. No results were supplied for a deliberate stall, obstruction test, fuse rating, wire gauge, waterproofing, or long-duration operation.
 
-R_EN/L_EN vẫn cần một sơ đồ as-built rõ ràng. Nếu chúng đang được kéo lên 5 V thì D2 phải để rời; nếu muốn firmware điều khiển enable, phải tháo hoàn toàn dây 5 V trước. Không bao giờ nối cùng một node enable vừa với 5 V vừa với GPIO ESP8266.
+R_EN/L_EN still need a clear as-built diagram. If they are tied to 5 V, D2 must remain disconnected. If firmware control is introduced later, every 5 V enable connection must be removed first. Never connect the same enable node to both 5 V and an ESP8266 GPIO.
 
-## AUTO, MANUAL và các nút
+## Automatic and Manual Control
 
-| Điều khiển | Nghĩa chính xác |
+The actual dashboard remains in Vietnamese; this documentation update does not translate the product interface.
+
+| Dashboard label | English meaning and behavior |
 | --- | --- |
-| Tự động | Xác nhận mưa rồi che; xác nhận khô lâu hơn rồi thu |
-| Thủ công | Dừng chuyển động hiện tại và chờ lệnh rõ ràng |
-| Che cây | Đưa mái che tới trạng thái `DEPLOYED`; được phép khi mưa |
-| Thu mái che | Đưa mái che tới `RETRACTED`; bị chặn nếu chưa xác nhận khô |
-| Dừng khẩn cấp | Tắt drive ngay, chuyển MANUAL và giữ STOP latch |
-| Đặt lại lỗi | Sau khi kiểm tra cơ khí/điện, xóa lỗi nhưng vẫn dừng ở MANUAL |
+| `Tự động` | Automatic / AUTO: qualify rain, deploy when wet, and retract only after a longer qualified dry state |
+| `Thủ công` | Manual / MANUAL: stop current motion and wait for an explicit command |
+| `Che cây` | Deploy the shield: move toward `DEPLOYED`; allowed during rain |
+| `Thu mái che` | Retract the shield: move toward `RETRACTED`; rejected until dry is qualified |
+| `Dừng khẩn cấp` | Emergency Stop: switch drive off immediately, enter MANUAL, and latch STOP |
+| `Đặt lại lỗi` | Reset Fault: clear a reviewed fault while remaining stopped in MANUAL |
 
-Nếu mưa quay lại trong lúc đang thu thủ công, GreenGuard dừng, chờ dead-time rồi che cây. Nếu vị trí đang `UNKNOWN`, AUTO được phép chạy full-time theo hướng che để bảo vệ, nhưng không tự thu mù quáng.
+If rain returns during a manual retraction, GreenGuard stops, waits through reversal dead-time, and then deploys the shield. If position is `UNKNOWN`, AUTO may run a full-time deployment to protect the plant, but it will not retract blindly.
 
-## Vị trí là ước lượng, không phải phép đo
+## Estimated Position Is Not a Position Sensor
 
-Khi chưa có limit switch, 0% và 100% trong firmware chỉ là kết quả của thời gian chạy. Điện áp, tải, ma sát, trượt, vật cản và mất điện đều làm nó lệch. Dashboard ghi `ESTIMATED`; STOP giữa đường ghi `STOPPED_PARTIAL`; reboot giữa chuyển động ghi `UNKNOWN`. Nếu người vận hành nhìn trực tiếp một endpoint rồi đánh dấu, trạng thái là `USER_CALIBRATED`. Chỉ switch đã bật và đang tác động mới là `LIMIT_CONFIRMED`.
+Without limit switches, 0% and 100% are inferred from runtime. Voltage, load, friction, slipping, obstructions, and interrupted power can all create drift. The dashboard reports `ESTIMATED`; stopping midway produces `STOPPED_PARTIAL`; rebooting after interrupted movement produces `UNKNOWN`. A directly observed endpoint can be recorded as `USER_CALIBRATED`. Only an enabled and active physical switch can produce `LIMIT_CONFIRMED`.
 
-Đây là chỗ tụi mình từng loay hoay khá lâu :3 — prototype đã chạy đủ 10 chu kỳ không có nghĩa “motor chạy N giây” tự động trở thành phép đo endpoint chính xác.
+This was one part we got stuck on for quite a while: completing 10 successful cycles still does not turn “the motor ran for N seconds” into a precise endpoint measurement.
 
-## Firmware, dashboard và protocol
+## Firmware, Dashboard, and Protocol
 
-State machine không dùng `delay()` để chờ mưa, chờ khô hay chờ chuyển động. Hai hướng PWM loại trừ lẫn nhau; khi đổi chiều, firmware đưa cả hai về LOW rồi chờ dead-time. Runtime timeout, fault lockout, STOP latch và trạng thái persistence đều nằm ở controller, không phụ thuộc browser.
+The state machine does not use `delay()` while qualifying rain, waiting for dry conditions, or tracking motion. The two PWM directions are mutually exclusive. Before reversal, firmware drives both LOW and waits through the dead-time. Runtime timeout, fault lockout, STOP latch, and persistence behavior are enforced by the controller rather than the browser.
 
-ESP8266 phục vụ HTML/CSS/JS từ LittleFS. Mỗi POST có request ID; status tách `ACCEPTED`, `STARTED`, `COMPLETED`, `STOPPED`, `REJECTED`, `FAULT`. UI bỏ qua acknowledgement sai ID, khóa double-click và không báo thành công nếu 90 giây vẫn chưa có phase kết thúc. Chi tiết ở [protocol v2](docs/PROTOCOL.md).
+The ESP8266 serves HTML, CSS, and JavaScript from LittleFS. Every POST command carries a request ID. Status distinguishes `ACCEPTED`, `STARTED`, `COMPLETED`, `STOPPED`, `REJECTED`, and `FAULT`. The UI ignores acknowledgements for another request, resists double-clicks, and does not report success if no terminal phase arrives within 90 seconds. See [protocol v2](docs/PROTOCOL.md).
 
-## Cấu trúc repository
+## Repository Structure
 
 ```text
-include/                   cấu hình phần cứng, persistence, secrets example
-src/                       tích hợp ESP8266, Wi-Fi, LittleFS, REST
-lib/GreenGuardCore/src/    state machine C++ không phụ thuộc phần cứng
-data/                      dashboard được nạp vào LittleFS
-test/test_core/            mô phỏng controller native
-test/web.test.mjs          protocol, DOM contract, auth và integration mock
-scripts/                   project check và server preview
-docs/                      audit, thiết kế, protocol, test, checklist vật lý
+include/                   hardware configuration, persistence, secrets example
+src/                       ESP8266, Wi-Fi, LittleFS, and REST integration
+lib/GreenGuardCore/src/    hardware-independent C++ state machine
+data/                      dashboard stored in LittleFS
+test/test_core/            native controller simulation
+test/web.test.mjs          protocol, DOM contract, authentication, and mock integration
+scripts/                   project checker and preview server
+docs/                      audit, design, protocol, tests, images, and physical checklist
 ```
 
-## Chuẩn bị môi trường
+## Environment Setup
 
-1. Cài [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/index.html) hoặc PlatformIO IDE.
-2. Dùng Node.js 20+ để chạy test web; repository không cần `npm install` vì test chỉ dùng module có sẵn của Node.
-3. Native test trên Windows cần `g++`/MinGW trong `PATH`.
-4. Sao chép `include/secrets.example.h` thành `include/secrets.h`:
+1. Install [PlatformIO Core](https://docs.platformio.org/en/latest/core/installation/index.html) or the PlatformIO IDE extension.
+2. Use Node.js 20 or newer for web tests. No `npm install` is required because the tests use built-in Node modules.
+3. Native tests on Windows require `g++`/MinGW on `PATH`.
+4. Copy `include/secrets.example.h` to `include/secrets.h`:
 
 ```cpp
-#define WIFI_SSID "ten-wifi"
-#define WIFI_PASSWORD "mat-khau"
-#define CONTROL_TOKEN "mot-token-ngau-nhien-dai"
+#define WIFI_SSID "your-wifi-name"
+#define WIFI_PASSWORD "your-wifi-password"
+#define CONTROL_TOKEN "a-long-random-control-token"
 ```
 
-`include/secrets.h` nằm trong `.gitignore`. Không đưa token hoặc mật khẩu vào issue, ảnh Serial hay commit.
+`include/secrets.h` is ignored by Git. Do not place passwords or tokens in issues, serial screenshots, or commits.
 
-## Build và test
+## Build and Test
 
 ```powershell
 pio run -e nodemcuv2
@@ -176,18 +198,18 @@ npm test
 npm run check
 ```
 
-Build phần mềm đã chạy ngày 2026-08-26 cho đúng môi trường:
+The verified firmware build uses the required environment:
 
 ```ini
 [env:nodemcuv2]
 board = nodemcuv2
 ```
 
-Kết quả: firmware PASS, LittleFS PASS, 45/45 scenario controller (132 assertions) và 11/11 test web/protocol/integration (52 assertions). Tổng cộng 56 test case/scenario và 184 assertions. RAM 31,720/81,920 byte (38.7%); flash 382,923/1,044,464 byte (36.7%). Xem [test results](docs/TEST_RESULTS.md).
+Current automated results: firmware PASS, LittleFS PASS, 45/45 controller scenarios with 132 assertions, and 11/11 web/protocol/integration tests with 52 assertions. That is 56 test cases/scenarios and 184 assertions in total. Firmware uses 31,720/81,920 bytes of RAM (38.7%) and 382,923/1,044,464 bytes of flash (36.7%). See [test results](docs/TEST_RESULTS.md).
 
-## Nạp firmware và dashboard
+## Upload Firmware and Dashboard
 
-Chỉ chọn đúng cổng sau khi nhận diện board. Lần kiểm thử mới vẫn nên bắt đầu với motor tháo rời và dry-run bật:
+Identify the correct serial port before uploading. A new test session should start with the motor disconnected and dry-run enabled:
 
 ```powershell
 pio run -e nodemcuv2 -t upload
@@ -195,39 +217,41 @@ pio run -e nodemcuv2 -t uploadfs
 pio device monitor -b 115200
 ```
 
-Firmware và filesystem là hai image riêng. `uploadfs` ghi lại phân vùng LittleFS nên có thể làm mất state/config đang lưu; ngắt motor và chuẩn bị hiệu chuẩn lại trước khi nạp. Khi Wi‑Fi kết nối, mở `http://greenguard.local`; nếu mDNS không chạy, dùng địa chỉ IP in ở Serial Monitor.
+Firmware and filesystem are separate images. `uploadfs` rewrites the LittleFS partition and may erase saved state or configuration. Disconnect motor power and be prepared to recalibrate before uploading it. When Wi-Fi connects, open `http://greenguard.local`; if mDNS is unavailable, use the IP address printed in Serial Monitor.
 
-### Kiểm thử an toàn cho một lần nạp mới
+### Safe Sequence for a New Upload
 
-1. Tháo motor và ngắt nguồn công suất.
-2. Giữ `ACTUATOR_DRY_RUN=true`; kiểm tra RPWM/LPWM đều LOW lúc boot và khi gửi lệnh.
-3. Xác nhận đúng serial port, nạp firmware và LittleFS, rồi thử rain DO, token, AUTO, MANUAL và STOP ở dry-run.
-4. So sánh wiring thực tế với [hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md) trước khi dùng cấu hình actuator-enabled.
-5. Chỉ thử motor khi có cách ngắt nguồn vật lý trong tầm tay và người vận hành quan sát trực tiếp.
+1. Disconnect the motor and motor-power supply.
+2. Keep `ACTUATOR_DRY_RUN=true`; verify RPWM and LPWM remain LOW at boot and when commands are submitted.
+3. Confirm the serial port, upload firmware and LittleFS, then test RainDrop DO, token handling, AUTO, MANUAL, and Emergency Stop in dry-run.
+4. Compare the real wiring with the [hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md) before using any actuator-enabled configuration.
+5. Test the motor only with a physical power disconnect within reach and an operator watching the mechanism.
 
-Một mock server cho phép kiểm tra UI mà không có board:
+A mock server can preview the dashboard without a board:
 
 ```powershell
 npm run preview
-# mở http://127.0.0.1:4173 và dùng token test-token-1234
+# Open http://127.0.0.1:4173 and use token test-token-1234
 ```
 
-## Phạm vi đã xác nhận và phần còn lại
+## What We Physically Validated
 
-Đã xác nhận trong test 2026-08-26: firmware được nạp lên NodeMCU thật; cảm biến active-LOW; 10 chu kỳ che–thu có tải; điện áp nguồn motor, rail 3V3, dòng vận hành/khởi động, dead-time và nhiệt độ sau chu kỳ; không có reset NodeMCU trong lần test.
+The 2026-08-26 test confirmed firmware running on a real NodeMCU, active-LOW rain input, 10 loaded deploy–retract cycles, the listed motor and 3V3 voltages, loaded/startup currents, reversal dead-time, temperatures after the cycles, and no NodeMCU reset during that test.
 
-Vẫn cần chủ dự án bổ sung hoặc tiếp tục kiểm tra:
+## Current Limitations
 
-- Bảng wiring as-built cho từng GPIO, terminal BTS7960 và R_EN/L_EN.
-- Có hay không có limit switch, cách xác định endpoint và full-travel time chính xác.
-- Motor stall current và phản ứng trong các tình huống vật cản khác nhau.
-- Fuse rating, tiết diện dây, emergency disconnect và bảo vệ cơ khí.
-- Chạy dài hạn, số chu kỳ lớn hơn, chống mưa, thoát nước, ăn mòn và ingress protection.
-- Bảo mật ngoài LAN; token HTTP hiện tại không phải TLS và không nên đưa trực tiếp ra Internet.
+The owner still needs to document or investigate:
 
-Các hạng mục chưa test không được suy ra từ kết quả 10 chu kỳ. Checklist tiếp theo nằm tại [hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md).
+- An as-built table for every GPIO, BTS7960 terminal, and R_EN/L_EN connection.
+- Whether limit switches are present, how endpoints are determined, and the actual full-travel time.
+- Motor stall current and behavior under different obstruction conditions.
+- Fuse rating, wire gauge, physical emergency disconnect, and mechanical protection.
+- Long-duration testing, a larger cycle count, rain exposure, drainage, corrosion, and ingress protection.
+- Security outside a trusted LAN; the current HTTP token is not TLS and must not be exposed directly to the Internet.
 
-## Tài liệu kỹ thuật
+Items outside the ten-cycle test must not be inferred from those results. Continue with the [hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md).
+
+## Technical Documentation
 
 - [Hardware audit](docs/HARDWARE_AUDIT.md)
 - [System design](docs/SYSTEM_DESIGN.md)
@@ -236,14 +260,13 @@ Các hạng mục chưa test không được suy ra từ kết quả 10 chu kỳ
 - [Automated and physical test results](docs/TEST_RESULTS.md)
 - [Wiring worksheet](WIRING.md)
 
-## Người hướng dẫn, học viên và contributor
+## People Behind the Project
 
-- **Minh Quân** ([`quanle0709`](https://github.com/quanle0709) + [`nhiennguyenquoc`](https://github.com/nhiennguyenquoc)): người khởi xướng khóa học; gia sư và người hướng dẫn embedded systems; instructor, project mentor và technical guide. Minh Quân thiết kế quá trình học, giải thích nền tảng, định hướng kỹ thuật, hỗ trợ giải quyết vấn đề và giám sát tích hợp/kiểm thử.
-- **[`minhkhoi092211`](https://github.com/minhkhoi092211)**: học viên, người trực tiếp xây dựng prototype và contributor có commit thật trong repository.
-- Các bạn học viên trong nhóm là những người trực tiếp xây dựng, tích hợp, debug và kiểm thử GreenGuard sau ba tháng học; vai trò đó khác với vai trò dạy và mentor của Minh Quân, nhưng không phải vai trò quan sát thụ động.
+- **[`quanle0709`](https://github.com/quanle0709) and [`nhiennguyenquoc`](https://github.com/nhiennguyenquoc)** — course initiators, embedded-systems tutors, instructors, project mentors, and technical guides. They designed and guided the learning process, explained concepts, provided technical direction, helped solve problems, and supervised integration and testing.
+- **[`minhkhoi092211`](https://github.com/minhkhoi092211)** — student learner, hands-on prototype builder, and repository contributor. The learner directly built, integrated, debugged, and tested the final GreenGuard prototype under the tutors’ guidance.
 
-GitHub attribution vẫn dựa trên các commit thật. Repository không viết lại lịch sử, tạo commit rỗng hay thêm `Co-authored-by` giả để thay đổi bảng Contributors.
+GitHub attribution remains based on real commits. The repository does not rewrite history, add empty attribution commits, or fabricate `Co-authored-by` lines.
 
-## Một lời nhắn nhỏ
+## A Note for Other Learners
 
-GreenGuard không phải một sản phẩm “hoàn hảo”; nó là bằng chứng rằng một nhóm bạn có thể bắt đầu từ GPIO và cảm biến số rồi cùng nhau làm ra một hệ thống chạy thật. Nếu bạn cũng đang học embedded, hãy đo từng thứ, debug từng lớp và đừng ngại những lúc code đúng mà dây vẫn sai 🔧. Bọn mình hy vọng hành trình này giúp bạn hình dung rõ hơn ngành embedded trông như thế nào — rồi tự tay làm một project còn hay hơn nữa nhé 🌱
+GreenGuard is not a perfect product. It is evidence that a learner can start with GPIO and a digital sensor, keep testing one part at a time, and eventually build a real working system. If you are learning embedded systems too, measure what you can, debug one layer at a time, and do not be discouraged when correct code meets incorrect wiring 🔧. We hope this project makes embedded engineering feel a little more concrete—and gives you ideas for a project of your own 🌱
