@@ -74,7 +74,7 @@ These owner-supplied photographs show that a completed physical prototype exists
 
 ## Measured Validation
 
-Firmware based on commit [`441f91e`](https://github.com/quanle0709/GreenGuard/commit/441f91ea89253d85c3314e3da47faa3d03afb850) was flashed to the confirmed NodeMCU 1.0 ESP-12E and tested on the completed prototype on **2026-08-26**. The owner supplied the following measurements; they are not estimates:
+Firmware based on commit [`441f91e`](https://github.com/quanle0709/GreenGuard/commit/441f91ea89253d85c3314e3da47faa3d03afb850) was flashed to the confirmed NodeMCU 1.0 ESP-12E and tested on the completed prototype on **2026-06-26**. The owner supplied the following measurements; they are not estimates:
 
 | Measurement | Result |
 | --- | ---: |
