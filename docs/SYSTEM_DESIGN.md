@@ -27,7 +27,7 @@ The code and UI do not use “open/closed” as motor commands because those wor
 | Runtime bound | Every physical movement has an absolute maximum (35 s default) | `MOTOR_TIMEOUT`, outputs OFF, fault lockout |
 | Interrupted reboot | A persisted active movement invalidates position | `UNKNOWN`, STOP latch set |
 | Corrupt persistence | Invalid enums/schema/ranges fail closed | `PERSISTENCE_INVALID` fault |
-| Optional limits | Disabled by default; either endpoint confirms position; both active fault | `LIMIT_CONFIRMED` or `LIMIT_CONFLICT` |
+| Limit-input feature | Disabled by default; when enabled, either endpoint confirms position and both active produce a fault | `LIMIT_CONFIRMED` or `LIMIT_CONFLICT` |
 | Request correlation | Every local command requires a nonzero uint32 request ID | Status reports the exact ID, result, and phase |
 
 ## State model
@@ -52,7 +52,7 @@ Faults are `NONE`, `MOTOR_TIMEOUT`, `LIMIT_CONFLICT`, `PERSISTENCE_INVALID`, or 
 6. If confirmed rain returns during manual retraction, GreenGuard stops, observes dead-time, and deploys. It remains in MANUAL afterward.
 7. Every new direction begins with both PWM outputs off. The state machine cannot represent two active directions, and the output mapper independently guarantees only one PWM duty can be nonzero.
 8. STOP overrides mode/motion. A new explicit AUTO or accepted manual motion can clear the STOP latch; fault reset alone keeps it latched.
-9. Without switches, timed completion sets endpoint position to `ESTIMATED`. It never claims physical confirmation.
+9. With the limit-input feature disabled, timed completion sets endpoint position to `ESTIMATED` even when switch wires are physically present. It never claims physical confirmation.
 
 All time comparisons cast `now - since` to `uint32_t`, so behavior remains correct across `millis()` wraparound.
 
@@ -67,7 +67,7 @@ rain DO ──> non-blocking filter ──> controller FSM ──> dry-run/outpu
 browser on same LAN ──> ESP8266WebServer ──> request ID + token check ──> controller command
 ```
 
-The ESP8266 serves the dashboard from LittleFS at `http://greenguard.local` or its DHCP address. There is no ThingSpeak, Firebase, Blynk, MQTT, Vercel, or Internet dependency in the rebuilt MVP. The stale ZIP contained an ESP32/servo/ThingSpeak design and was removed from the working tree after preservation in Git and the migration archive.
+The ESP8266 serves the dashboard from LittleFS at `http://greenguard.local` or its DHCP address. GreenGuard has no ThingSpeak, Firebase, Blynk, MQTT, Vercel, or Internet dependency.
 
 ## Local security boundary
 
@@ -79,4 +79,4 @@ GET status/config is visible to the local network. State-changing POST requests 
 - Timed travel cannot detect jams, slipping, or real endpoints.
 - One remembered request ID provides idempotence for immediate local retries, not an audit log.
 - Local token authentication without HTTPS does not protect against a hostile LAN observer.
-- GPIO wiring, direction, current, supply, grounding, switches, endpoints, and timing need the physical checklist.
+- The as-built GPIO connections are recorded, but limit-switch behavior, exact direction-to-terminal polarity, full-travel time, stall behavior, complete power topology, and shared-ground measurements still need further characterization.

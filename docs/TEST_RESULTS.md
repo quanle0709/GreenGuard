@@ -1,51 +1,48 @@
-# Test results
+# GreenGuard test results
 
-Run date: 2026-08-26, Asia/Saigon. Tests ran from the canonical D-drive repository. No result from the previous rebuild was trusted or copied as a pass.
+## Automated repository verification
 
-## Automated checks completed so far
+Automated checks validate the committed ESP8266 build, filesystem image, controller state machine, dashboard protocol, repository structure, and safe defaults. They are separate from the physical prototype validation recorded below.
 
 | Check | Command | Result |
 | --- | --- | --- |
-| Clean ESP8266 firmware | `pio run -e nodemcuv2 -t clean`, then `pio run -e nodemcuv2` | PASS. PlatformIO printed `board: nodemcuv2`, `NodeMCU 1.0 (ESP-12E Module)`, ESP8266 80 MHz / 80 KiB RAM / 4 MiB flash |
-| Firmware size | same clean build | RAM 31,720 / 81,920 bytes (38.7%); flash 382,923 / 1,044,464 bytes (36.7%) |
-| LittleFS image | `pio run -e nodemcuv2 -t buildfs` | PASS; image contains `/app.js`, `/index.html`, `/protocol.js`, `/style.css` |
-| Portable controller | `pio test -e native` with MinGW `g++` on PATH | PASS; 45/45 scenarios, 132 runtime assertions |
+| Clean ESP8266 firmware | `pio run -e nodemcuv2 -t clean`, then `pio run -e nodemcuv2` | PASS; PlatformIO identified `board: nodemcuv2`, NodeMCU 1.0 ESP-12E, ESP8266 80 MHz / 80 KiB RAM / 4 MiB flash |
+| Firmware size | Same clean build | RAM 31,720 / 81,920 bytes (38.7%); flash 382,923 / 1,044,464 bytes (36.7%) |
+| LittleFS image | `pio run -e nodemcuv2 -t buildfs` | PASS; image contains `/app.js`, `/index.html`, `/protocol.js`, and `/style.css` |
+| Portable controller | `pio test -e native` | PASS; 45/45 scenarios, 132 runtime assertions |
 | JavaScript syntax | `node --check` for dashboard, protocol, mock server, and tests | PASS |
-| Web/protocol/auth/integration | `node --test` | PASS; 11/11 tests, 52 assertions |
-| Project structure/syntax | `node scripts/check-project.mjs` | PASS; 17 required artifacts, JavaScript syntax, board target, dry-run, ignore rules, and stale-controller source scan |
+| Web, protocol, authentication, and integration | `npm test` | PASS; 11/11 tests, 52 assertions |
+| Project structure and safety defaults | `npm run check` | PASS; required artifacts, JavaScript syntax, `nodemcuv2`, dry-run default, ignore rules, links, and controller scan |
 | PlatformIO configuration | `pio project config` | PASS; computed `default_envs = nodemcuv2`, `board = nodemcuv2`, filesystem `littlefs` |
-| Secret-like text scan | `git grep` plus ignored-file review | PASS; only expected macro names/includes/examples, no credential values committed |
-| Generated artifact/archive scan | `git ls-files` pattern scan | PASS; no `.pio`, `node_modules`, binary, object, or ZIP artifact tracked |
-| Local path scan | `rg` for Windows absolute paths outside ignored output | PASS; no local absolute path in repository files |
-| Git whitespace check | `git diff --check` | PASS; no whitespace errors |
-| Serial-device detection in the autonomous rebuild environment | `pio device list` plus Windows serial/PnP inventory | No NodeMCU/USB UART candidate was attached to that environment. COM3/4/6/7 were Bluetooth serial links; Codex did not perform the physical flash |
-| Visual browser rendering | in-app browser skill against `http://127.0.0.1:4173` | BLOCKED; runtime returned no available browser instances after the required recovery check |
+| Secret-like text scan | `git grep` plus ignored-file review | PASS; only expected macro names, includes, and examples; no credential values committed |
+| Generated artifact and archive scan | `git ls-files` pattern scan | PASS; no `.pio`, `node_modules`, object, binary, or ZIP build artifact tracked |
+| Local path scan | Repository text search | PASS; no local absolute path in tracked repository files |
+| Git whitespace check | `git diff --check` | PASS |
 
-Current combined count: **56 test cases/scenarios and 184 assertions**. Scenario count is reported separately from assertions to avoid inflating coverage.
+Current combined automated count: **56 test cases/scenarios and 184 assertions**. Scenario count is reported separately from assertions.
 
-## Scenario coverage
+### Automated scenario coverage
 
-Native controller tests cover startup dry, startup wet, known/unknown persistence, corrupt persistence, reboot during motion, sustained rain, short wet noise, rapid wet/dry noise, cancelled dry confirmation, sustained dry, manual deploy/retract, rain-blocked retract, STOP in both directions, repeated commands, duplicate IDs, mode conflicts, reversal dead-time, mutually exclusive PWM, dry-run output, optional enable behavior, maximum runtime, fault lockout/reset, AUTO↔MANUAL, malformed/zero-ID commands, `millis()` wraparound for sensor and motion, limits disabled, each limit active, both limits active, rain reversal during manual retract, persisted STOP, calibration, partial estimate, snapshot movement marking, offline autonomy, and the frequent-loop dead-time regression.
+Native controller tests cover startup dry, startup wet, known/unknown persistence, corrupt persistence, reboot during motion, sustained rain, wet noise, rapid wet/dry noise, cancelled dry confirmation, sustained dry, manual deploy/retract, rain-blocked retract, STOP in both directions, repeated commands, duplicate IDs, mode conflicts, reversal dead-time, mutually exclusive PWM, dry-run output, enable behavior, maximum runtime, fault lockout/reset, AUTO↔MANUAL, malformed or zero-ID commands, `millis()` wraparound, limits disabled, each limit active, both limits active, rain reversal during manual retract, persisted STOP, calibration, partial estimates, snapshot movement marking, offline autonomy, and frequent-loop dead-time regression.
 
-Web tests cover nonzero request IDs, delayed and mismatched acknowledgements, separate terminal phases, malformed status, stale/disconnect logic, exact Vietnamese controls, no vague ON/OFF mode switch, token/request transport, honest timeout copy, mobile/reduced-motion/focus CSS contracts, mock status/assets, unauthorized and malformed requests, login-token → command → started → completed flow, duplicates, and request-specific wet rejection.
+Web tests cover nonzero request IDs, delayed and mismatched acknowledgements, separate terminal phases, malformed status, stale/disconnect logic, exact Vietnamese controls, token and request transport, honest timeout copy, mobile/reduced-motion/focus styling, mock status and assets, unauthorized and malformed requests, login-token → command → started → completed flow, duplicate requests, and request-specific wet rejection.
 
-## Environment notes
+## Physical prototype validation
 
-- PlatformIO Core and all packages were stored under the task workspace on D.
-- The first native attempt could not run because no host `gcc/g++` was installed. A PlatformIO portable MinGW toolchain was installed on D; the unchanged suite then passed.
-- The first firmware compile found an ESP8266WebServer `collectHeaders` API mismatch; it was repaired and the build passed.
-- Review found and repaired a same-target AUTO race that could restart reversal dead-time on every loop tick. A dedicated regression test now passes.
+We completed the physical GreenGuard prototype, applied the updated working firmware, and performed the recorded validation on **June 26, 2026**. This physical test is distinct from automated repository checks and from the later GitHub publication date.
 
-## Review/repair notes
+### Confirmed as-built connections
 
-- Full diff and output-write paths were reviewed after the first pass. No blocking `delay()` remains; both PWM paths are switched off before every output change.
-- The stale committed ZIP contained the contradictory ESP32/servo/ThingSpeak system. It was removed after preservation in Git history and the verified migration archive.
-- ESP32 text now remains only in negative regression tests, the audit explanation, and the repository rule that forbids migrating this project to ESP32.
-- Git commit/push and remote verification are delivery steps performed after this test record is finalized; their SHAs are reported in the final handoff.
+| NodeMCU pin | GPIO | Physical connection |
+| --- | ---: | --- |
+| D1 | GPIO5 | RainDrop DO |
+| D5 | GPIO14 | BTS7960 RPWM |
+| D6 | GPIO12 | BTS7960 LPWM |
+| D2 | GPIO4 | BTS7960 R_EN and L_EN control |
+| D7 | GPIO13 | Retracted limit-switch connection |
+| D0 | GPIO16 | Deployed limit-switch connection |
 
-## Owner-reported physical verification
-
-After the autonomous software rebuild, the owner flashed firmware based on commit `441f91e` to the confirmed NodeMCU 1.0 ESP-12E and tested the completed prototype on 2026-08-26. These measurements were supplied by the owner; they were not captured by Codex's local test environment.
+### Recorded physical results
 
 | Measurement | Result |
 | --- | ---: |
@@ -54,13 +51,15 @@ After the autonomous software rebuild, the owner flashed firmware based on commi
 | Supply voltage drop | 3.8% |
 | Lowest 3V3 rail during motor startup | 3.17 V |
 | NodeMCU resets | None |
-| Rain DO dry / wet | 3.27 V / 0.08 V, active-LOW |
-| Normal loaded motor current | 2.63 A |
+| RainDrop DO dry / wet | 3.27 V / 0.08 V, active-LOW |
+| Loaded running motor current | 2.63 A |
 | Maximum measured startup current | 7.20 A |
 | Direction-reversal dead-time | 307 ms |
 | Highest motor / wire-and-connector temperature | 51°C / 34°C after 10 cycles |
-| Evaluation | PASS with conditions within this test scope |
+| Evaluation | **PASS with conditions within this test scope** |
 
-The observed 3V3 rail remained stable enough for the tested startup events, and the 307 ms measured dead-time closely matched the configured 300 ms target. Rain DO stayed within the ESP8266 GPIO voltage range during this test. Ten cycles do not establish long-term endurance, outdoor weather resistance, ingress protection, every obstruction condition, stall behavior, or lifetime reliability.
+The observed 3V3 rail remained stable enough for the measured startup events, and the 307 ms dead-time closely matched the configured 300 ms target. RainDrop DO remained within the ESP8266 GPIO range in our tested arrangement.
 
-The real prototype used an actuator-enabled local test configuration. The committed repository intentionally retains `ACTUATOR_DRY_RUN=true`. Remaining evidence gaps are tracked in [HARDWARE_TEST_CHECKLIST.md](HARDWARE_TEST_CHECKLIST.md).
+The result does not establish long-term endurance, outdoor weather resistance, ingress protection, corrosion resistance, every obstruction condition, stall behavior, final fuse selection, or lifetime reliability. Limit-switch wires are physically present, but switch polarity, calibration, endpoint accuracy, and full-travel time were not included in the recorded measurement set.
+
+Our prototype used an actuator-enabled local configuration. The committed repository intentionally retains `ACTUATOR_DRY_RUN=true`, `CONTROL_BTS_ENABLE=false`, and `USE_LIMIT_SWITCHES=false`. See the [hardware validation and reproduction checklist](HARDWARE_TEST_CHECKLIST.md) for the remaining safety work.

@@ -1,56 +1,77 @@
-# Hardware test checklist
+# Hardware validation and reproduction checklist
 
-No item below was checked by Codex during the autonomous software rebuild. The owner subsequently reported a real-prototype test on 2026-08-26; completed measurements are recorded below, while unchecked items still need evidence. Keep the public repository at `ACTUATOR_DRY_RUN=true`.
+This record separates what we verified on our completed prototype on **June 26, 2026** from checks another builder should repeat and from safety questions outside our ten-cycle validation. The public repository remains at `ACTUATOR_DRY_RUN=true`.
 
-## Identify and measure with motor disconnected
+## Verified on our prototype on June 26, 2026
 
-- [ ] Photograph the controller markings and confirm NodeMCU 1.0 / ESP-12E.
-- [ ] Record every actual wire in a pin-to-terminal table; do not rely on repository defaults.
-- [ ] Confirm RPWM, LPWM, R_EN, L_EN, VCC, GND, B+, B−, M+, and M− labels on the actual driver.
-- [ ] Measure rain-module VCC and DO in dry and wet states. DO at the ESP8266 must never exceed 3.3 V.
-- [ ] Determine whether wet is DO LOW or HIGH and record the threshold adjustment.
+- [x] NodeMCU 1.0 ESP-12E / ESP8266 controller used with the updated working firmware.
+- [x] BTS7960 / HW-039 drove the real 12 V geared-motor mechanism.
+- [x] RainDrop DO was connected to D1/GPIO5 and behaved active-LOW.
+- [x] BTS7960 RPWM was connected to D5/GPIO14.
+- [x] BTS7960 LPWM was connected to D6/GPIO12.
+- [x] BTS7960 R_EN and L_EN control was connected to D2/GPIO4.
+- [x] The retracted limit-switch connection was wired to D7/GPIO13.
+- [x] The deployed limit-switch connection was wired to D0/GPIO16.
+- [x] The completed mechanism performed 10 consecutive loaded deploy–retract cycles.
+- [x] RPWM/LPWM reversal dead-time measured 307 ms against the configured 300 ms target.
+- [x] The NodeMCU did not reset during the observed motor-startup events.
+
+| Measurement | Recorded result |
+| --- | ---: |
+| Motor supply before / during movement | 12.18 V / 11.72 V |
+| Supply voltage drop | 3.8% |
+| Lowest 3V3 rail during motor startup | 3.17 V |
+| RainDrop DO dry / wet | 3.27 V / 0.08 V, active-LOW |
+| Loaded running motor current | 2.63 A |
+| Maximum measured startup current | 7.20 A |
+| Reversal dead-time | 307 ms |
+| Highest motor temperature after 10 cycles | 51°C |
+| Wire and connector temperature after 10 cycles | 34°C |
+| Evaluation | **PASS with conditions within this test scope** |
+
+These results describe our tested arrangement and load. The actuator-enabled configuration used for the physical test was local and is not the committed public default.
+
+## Recommended before reproducing or modifying the system
+
+### With motor power disconnected
+
+- [ ] Confirm the board markings and select PlatformIO `board = nodemcuv2`.
+- [ ] Compare every wire against the [confirmed as-built table](../WIRING.md); record any intentional change.
+- [ ] Confirm RPWM, LPWM, R_EN, L_EN, VCC, GND, B+, B−, M+, and M− labels on the specific driver module.
+- [ ] Measure rain-module VCC and DO in dry and wet states. DO at the ESP8266 must remain within the 3.3 V GPIO range.
 - [ ] Confirm no ESP8266 GPIO has a 5 V or 12 V path.
-- [ ] Confirm controller ground, driver logic ground, sensor ground, and motor-supply negative share the intended reference.
-- [ ] Read the motor rated voltage/current label and measure or obtain its stall current.
-- [ ] Verify power-supply voltage, continuous/current-surge capacity, regulation, and polarity under load.
-- [ ] Fit a fuse sized from the measured circuit, plus a physical emergency disconnect.
-- [ ] Check wire gauge, connector rating, strain relief, suppression, ventilation, and weatherproofing.
-- [ ] Identify both endpoint switches if present; record normally-open/closed behavior and voltage.
+- [ ] Trace and measure the intended shared reference between controller, driver logic, sensor, and motor-supply negative.
+- [ ] Record the motor's rated voltage and current, then obtain or safely measure stall current.
+- [ ] Select a fuse, wire gauge, connectors, and emergency disconnect from the measured circuit requirements.
+- [ ] Check strain relief, suppression, ventilation, drainage, and weather protection.
+- [ ] Characterize both limit switches: contact type, voltage, pull-up requirements, active polarity, placement, and repeatability.
 
-## First powered logic test
+### First powered logic test
 
 - [ ] Keep the motor physically disconnected and `ACTUATOR_DRY_RUN=true`.
-- [ ] Verify `board = nodemcuv2` and positively identify the intended serial port before flashing.
-- [ ] Measure RPWM and LPWM at boot; both must remain LOW.
-- [ ] If firmware-controlled enable is proposed, first remove every external 5 V connection from R_EN/L_EN and review the new wiring. Never join 5 V and D2.
-- [ ] Observe serial boot, LittleFS, Wi-Fi retry, and offline AUTO without connecting the motor.
-- [ ] Test dry/wet DO and measure the 3 s wet / 120 s dry defaults.
-- [ ] Open the dashboard by IP and, if supported, `http://greenguard.local`.
-- [ ] Test token rejection, AUTO, MANUAL, deploy, retract, STOP, reset, and stale/disconnect display in dry-run.
+- [ ] Positively identify the intended serial port before flashing.
+- [ ] Measure RPWM and LPWM at boot and during test commands; both must remain LOW in dry-run.
+- [ ] Leave `CONTROL_BTS_ENABLE=false` until D2 and the R_EN/L_EN node have been measured and reviewed. Never share that GPIO node with an external 5 V source.
+- [ ] Leave `USE_LIMIT_SWITCHES=false` until D7/D0 voltage, polarity, pull-ups, and endpoint behavior are verified.
+- [ ] Observe serial boot, LittleFS, Wi-Fi retry, and offline AUTO behavior.
+- [ ] Test RainDrop DO, token rejection, AUTO, MANUAL, deploy, retract, STOP, reset, and stale/disconnect display in dry-run.
 
-## Motor tests only after the previous sections pass
+### Controlled motor test
 
-- [ ] Provide an unloaded, restrained mechanism and a reachable emergency disconnect.
-- [ ] Change `ACTUATOR_DRY_RUN=false` in a reviewed local build only; never commit that default.
-- [ ] Send one short low-duty pulse and identify which physical direction is DEPLOY.
-- [ ] Test STOP during each direction.
-- [ ] Measure that both PWM signals are LOW throughout reversal dead-time.
-- [ ] Test each endpoint separately; confirm motor power stops at the actual endpoint.
-- [ ] If switches exist, test each one and the both-active fault with motor power isolated where possible.
-- [ ] If switches do not exist, measure full travel repeatedly under realistic load and record variation; treat position as estimated.
-- [ ] Test obstruction/stall response without exceeding motor, driver, wire, connector, or supply ratings.
-- [ ] Reinspect temperature, noise resets, rain-input interference, enclosure sealing, drainage, and corrosion protection.
+- [ ] Use a restrained mechanism, a reachable physical disconnect, and an operator watching the test.
+- [ ] Use an actuator-enabled configuration only in a reviewed local build; never commit it as the default.
+- [ ] Confirm which terminal polarity and PWM direction physically deploys and retracts the shield.
+- [ ] Test STOP during each direction and confirm both PWM signals remain LOW throughout reversal dead-time.
+- [ ] After electrical characterization, test each limit switch separately and test the both-active fault with motor power isolated where possible.
+- [ ] Measure full-travel time repeatedly under realistic load and record its variation.
+- [ ] Design a safe obstruction/stall test that cannot exceed motor, driver, wire, connector, or supply ratings.
+- [ ] Reinspect temperature, noise resets, sensor interference, enclosure sealing, drainage, and corrosion protection.
 
-## Record
+## Not covered by our ten-cycle validation
 
-| Item | Measured value / evidence | Date | Operator |
-| --- | --- | --- | --- |
-| Actual GPIO wiring | As-built table not supplied | — | — |
-| Rain DO dry/wet voltage and polarity | 3.27 V / 0.08 V; active-LOW | 2026-08-26 | Owner-reported |
-| Motor current | 2.63 A normal loaded motion; 7.20 A maximum startup; stall not tested | 2026-08-26 | Owner-reported |
-| Motor supply | 12.18 V before / 11.72 V during movement; 3.8% drop; fuse evidence not supplied | 2026-08-26 | Owner-reported |
-| 3V3 rail / controller stability | Minimum 3.17 V at startup; no NodeMCU reset | 2026-08-26 | Owner-reported |
-| Direction reversal | Functional deploy–retract observed; 307 ms dead-time; exact terminal mapping not supplied | 2026-08-26 | Owner-reported |
-| Temperature after 10 cycles | Motor 51°C; wires/connectors 34°C | 2026-08-26 | Owner-reported |
-| Endpoints / switches | Not supplied | — | — |
-| Full-travel time | Not supplied | — | — |
+- Limit-switch contact polarity, calibration, repeatability, and endpoint accuracy.
+- Exact full-travel time and variation across voltage, load, and temperature.
+- Motor stall current and every possible jam or obstruction condition.
+- Final fuse selection, wire gauge, connector margin, and emergency-disconnect rating.
+- Complete shared-ground and controller-power topology measurements.
+- Long-term endurance, product-lifetime reliability, outdoor weather resistance, ingress protection, drainage, and corrosion resistance.

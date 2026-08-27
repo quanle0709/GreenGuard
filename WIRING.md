@@ -1,38 +1,52 @@
-# Wiring worksheet — verify before connecting
+# Confirmed as-built wiring and safety notes
 
-> **This is not a confirmed as-built diagram.** NodeMCU 1.0 ESP-12E, HW-039/BTS7960, the 12 V geared motor, RainDrop sensor, 12 V 10 A supply, and XL4005 are confirmed. The exact pin-to-terminal wiring below remains a candidate until an as-built table is supplied. Keep the public repository at `ACTUATOR_DRY_RUN=true`.
+We assembled and operated our completed GreenGuard prototype with the NodeMCU 1.0 ESP-12E pin mapping below. The public repository still uses `ACTUATOR_DRY_RUN=true`; this safe firmware default does not change the physical connections on our prototype.
 
-## Candidate profile compiled by default
+## Confirmed NodeMCU connections
 
-| NodeMCU label | ESP8266 GPIO | Candidate connection | Status | Electrical rule |
-| --- | ---: | --- | --- | --- |
-| D1 | 5 | RainDrop DO | Pin mapping unverified; signal measured | Owner measured 3.27 V dry / 0.08 V wet, active-LOW |
-| D5 | 14 | HW-039/BTS7960 RPWM | Firmware mapping; terminal wire unverified | PWM output; prototype function confirmed |
-| D6 | 12 | HW-039/BTS7960 LPWM | Firmware mapping; terminal wire unverified | PWM output; must never be active with RPWM |
-| D2 | 4 | Optional shared R_EN/L_EN control | Disabled, not part of default wiring | Use only after removing all 5 V enable connections |
-| D7 | 13 | Optional retracted limit | Disabled / no switch confirmed | External pull-up to 3.3 V in the proposed profile |
-| D0 | 16 | Optional deployed limit | Disabled / no switch confirmed | External pull-up to 3.3 V required in the proposed profile |
-| D3 / D4 / D8 | 0 / 2 / 15 | No GreenGuard connection | Intentionally avoided | ESP8266 boot-strapping pins |
+| NodeMCU pin | ESP8266 GPIO | Physical connection | Function / observed status |
+| --- | ---: | --- | --- |
+| D1 | GPIO5 | RainDrop DO | Active-LOW; measured 3.27 V dry and 0.08 V wet |
+| D5 | GPIO14 | BTS7960 RPWM | Motor-direction PWM input used by our prototype |
+| D6 | GPIO12 | BTS7960 LPWM | Opposite motor-direction PWM input used by our prototype |
+| D2 | GPIO4 | BTS7960 R_EN and L_EN control | Physically connected; public firmware control is disabled |
+| D7 | GPIO13 | Retracted limit-switch connection | Physically connected; public limit handling is disabled |
+| D0 | GPIO16 | Deployed limit-switch connection | Physically connected; public limit handling is disabled |
 
-The code assumes `DEPLOY` uses RPWM only as a configurable starting point. If physical motion is opposite, change `deployUsesRpwm`; do not rename the physical meanings.
+The connection table records our physical build. It does not establish limit-switch contact polarity, calibration, endpoint accuracy, or the mechanism's full-travel time because those behaviors were not part of our reported measurement set.
 
-## R_EN and L_EN decision
+D3/GPIO0, D4/GPIO2, and D8/GPIO15 have no GreenGuard firmware assignment and participate in ESP8266 boot selection. Avoid using them for added peripherals without reviewing the required boot levels.
 
-The exact R_EN/L_EN wiring was not included in the supplied validation record. If both enable inputs are pulled to the driver's 5 V logic supply, `CONTROL_BTS_ENABLE=false`, D2 stays unused, and firmware stops by setting RPWM=LPWM=0.
+## Public firmware configuration
 
-A later improvement may join R_EN and L_EN to D2 so firmware can inhibit the bridge. Do this only after disconnecting both enable pins from 5 V. Never connect a 5 V enable node to an ESP8266 GPIO. The actual module's input thresholds and terminal layout must be verified first.
+The committed firmware deliberately separates safe defaults from the as-built hardware:
 
-## Power worksheet
-
-| Path | Candidate topology | Still required |
+| Setting | Committed value | Effect in the public build |
 | --- | --- | --- |
-| Motor power | Confirmed 12 V 10 A supply → protection → driver B+/B− | Observed 12.18 V before movement / 11.72 V during movement; fuse and stall evidence still required |
-| Motor output | Driver M+/M− → motor | Identify physical deploy/retract direction |
-| Controller | Confirmed XL4005 step-down in the prototype | Minimum observed 3V3 was 3.17 V; exact supply path/ripple remain undocumented |
-| Driver logic | Supply required by actual IBT-2 board | Read board markings/data and verify 3.3 V input recognition |
-| Ground | Common logic reference is expected | Trace and measure shared ground before signal connection |
-| Rain sensor | Confirmed RainDrop module | DO measured safe in the tested arrangement; re-measure after any supply/wiring change |
+| `ACTUATOR_DRY_RUN` | `true` | Controller logic runs while RPWM and LPWM remain LOW |
+| `CONTROL_BTS_ENABLE` | `false` | D2 is not configured or driven as an enable output |
+| `USE_LIMIT_SWITCHES` | `false` | D7 and D0 are not read by the controller; position remains time-estimated |
+| `LIMIT_ACTIVE_LOW` | `true` | Firmware setting reserved for an enabled-switch build; not a measured claim about our switch contacts |
 
-The 10 A supply rating is confirmed, but it does not determine the correct fuse by itself. Use stall-current evidence and the ratings of wire, connectors, switch, driver, and supply. Add a reachable physical emergency disconnect.
+Do not change these flags merely because the physical wires exist. Any actuator-enabled or switch-enabled build requires a separate electrical review and controlled test.
 
-See [Hardware audit](docs/HARDWARE_AUDIT.md) and [hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md) before any powered test.
+## R_EN and L_EN safety
+
+Our prototype connects R_EN and L_EN control to D2/GPIO4. Before setting `CONTROL_BTS_ENABLE=true`, measure the enable node and confirm the module input arrangement. No external 5 V source may share a node connected to an ESP8266 GPIO. Never apply 5 V or 12 V to D2 or any other ESP8266 GPIO.
+
+With the committed `CONTROL_BTS_ENABLE=false`, firmware does not configure or drive D2. With `ACTUATOR_DRY_RUN=true`, RPWM and LPWM remain LOW.
+
+## Power and motor record
+
+| Path | Confirmed or observed | Additional verification needed |
+| --- | --- | --- |
+| Motor power | 12 V, 10 A supply; 12.18 V before movement and 11.72 V during movement | Final fuse selection, stall current, wire and connector ratings |
+| Motor output | BTS7960/HW-039 drove the 12 V geared motor through 10 loaded deploy–retract cycles | Exact terminal polarity and physical direction mapping before rewiring |
+| Controller supply | XL4005 step-down module; lowest observed 3V3 rail was 3.17 V with no NodeMCU reset | Complete power topology, ripple, and regulator thermal margin |
+| Driver logic | BTS7960/HW-039 used successfully in our prototype | Recheck logic voltage and terminal labels after any wiring change |
+| Ground | The system operated as assembled | Record and measure the full shared-ground topology before reproducing or modifying it |
+| Rain sensor | RainDrop DO measured 3.27 V dry and 0.08 V wet | Re-measure after any sensor-supply or wiring change |
+
+The 10 A supply rating does not determine the correct fuse by itself. Select protection from the motor's stall behavior and the ratings of the supply, driver, wire, connectors, and disconnect. Keep a reachable physical emergency disconnect during powered testing.
+
+See the [hardware record](docs/HARDWARE_AUDIT.md) and [hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md) before reproducing or changing the system.

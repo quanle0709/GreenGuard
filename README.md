@@ -36,6 +36,8 @@ The learner assembled the mechanical structure, integrated the electronics and f
 </p>
 <p align="center"><em>The completed GreenGuard prototype after three months of embedded-systems learning and hands-on development.</em></p>
 
+We completed the physical GreenGuard prototype, applied the updated working firmware, and performed the recorded physical validation on **June 26, 2026**. We updated and published the repository on GitHub on **August 26, 2026**. These are separate milestones: June records the completed build and physical test, while August records the repository update.
+
 ## What GreenGuard Can Do
 
 - Qualify rain input without blocking: the defaults require 3 seconds of wet input and 120 seconds of dry input.
@@ -47,7 +49,7 @@ The learner assembled the mechanical structure, integrated the electronics and f
 - Optionally require a LAN control token while keeping AUTO protection local when Wi-Fi or the browser is unavailable.
 - Resist duplicate actions caused by double-clicks or delayed acknowledgements.
 
-The public repository intentionally keeps `ACTUATOR_DRY_RUN=true`. The state machine runs, but RPWM, LPWM, and any firmware-controlled enable output remain LOW. The physical prototype test used a local actuator-enabled configuration that was not committed.
+The public repository intentionally keeps `ACTUATOR_DRY_RUN=true`. The state machine runs, but RPWM and LPWM remain LOW. `CONTROL_BTS_ENABLE=false` also means the public build does not configure or drive D2 as an enable output. Our physical prototype test used a local actuator-enabled configuration that was not committed.
 
 ## How It Works
 
@@ -70,11 +72,11 @@ The browser observes state and submits requests. The ESP8266 decides whether a c
 </p>
 <p align="center"><em>A front view of the prototype showing its mechanical frame and shield-driving components.</em></p>
 
-These owner-supplied photographs show that a completed physical prototype exists. They are not standalone proof of the ten-cycle test, the electrical measurements, or every system function; the recorded validation results below are the evidence for those claims.
+These photographs show our completed physical prototype. They are not standalone proof of the ten-cycle test, the electrical measurements, or every system function; our recorded validation results below are the evidence for those claims.
 
 ## Measured Validation
 
-Firmware based on commit [`441f91e`](https://github.com/quanle0709/GreenGuard/commit/441f91ea89253d85c3314e3da47faa3d03afb850) was flashed to the confirmed NodeMCU 1.0 ESP-12E and tested on the completed prototype on **2026-06-26**. The owner supplied the following measurements; they are not estimates:
+We completed the prototype, applied the updated working firmware to the confirmed NodeMCU 1.0 ESP-12E, and performed the physical validation on **June 26, 2026**. We recorded the following measurements during that test; they are not estimates:
 
 | Measurement | Result |
 | --- | ---: |
@@ -108,30 +110,32 @@ The prototype passed functional and electrical observation for 10 consecutive lo
 | RainDrop rain sensor using active-LOW DO | Confirmed; measured at 3.27 V dry and 0.08 V wet |
 | 12 V, 10 A power supply | Confirmed on the prototype |
 | XL4005 step-down module | Confirmed on the prototype |
-| Limit switches | Not confirmed; disabled in firmware |
+| Retracted and deployed limit-switch connections | Confirmed on D7/GPIO13 and D0/GPIO16; public firmware handling remains disabled |
 
-### Wiring Still Needs an As-Built Record
+### Confirmed As-Built Wiring
 
-The physical test confirms that the prototype operated, but the owner has not yet supplied a complete pin-to-terminal as-built table. The code therefore remains the reference for candidate GPIO assignments, not proof of every physical wire:
+We assembled and tested the prototype with the following NodeMCU pin mapping. The table records the physical connections used in our completed GreenGuard build.
 
-| NodeMCU | GPIO | Candidate connection | Documentation status |
+| NodeMCU pin | GPIO | Physical connection | Function / observed status |
 | --- | ---: | --- | --- |
-| D1 | 5 | RainDrop DO | Voltage and active-LOW behavior measured; physical pin record still needed |
-| D5 | 14 | BTS7960 RPWM | Firmware mapping; actual terminal wire still needs to be recorded |
-| D6 | 12 | BTS7960 LPWM | Firmware mapping; actual terminal wire still needs to be recorded |
-| D2 | 4 | Optional R_EN/L_EN control | Firmware control disabled; actual enable wiring not supplied |
-| D7 | 13 | Optional retracted limit | Disabled; switch presence not confirmed |
-| D0 | 16 | Optional deployed limit | Disabled; switch presence not confirmed |
+| D1 | GPIO5 | RainDrop DO | Active-LOW; measured 3.27 V dry and 0.08 V wet |
+| D5 | GPIO14 | BTS7960 RPWM | Motor-direction PWM input used by our prototype |
+| D6 | GPIO12 | BTS7960 LPWM | Opposite motor-direction PWM input used by our prototype |
+| D2 | GPIO4 | BTS7960 R_EN and L_EN control | Physically connected; public firmware control is disabled |
+| D7 | GPIO13 | Retracted limit-switch connection | Physically connected; public limit handling is disabled |
+| D0 | GPIO16 | Deployed limit-switch connection | Physically connected; public limit handling is disabled |
 
-D3/GPIO0, D4/GPIO2, and D8/GPIO15 are ESP8266 boot-strapping pins, so the default profile avoids them. Read the [wiring worksheet](WIRING.md) and [hardware audit](docs/HARDWARE_AUDIT.md) before changing wiring or output configuration.
+D3/GPIO0, D4/GPIO2, and D8/GPIO15 are ESP8266 boot-strapping pins, so the default profile avoids them. Read the [confirmed wiring record](WIRING.md) and [hardware record](docs/HARDWARE_AUDIT.md) before changing wiring or output configuration.
+
+Physical wiring and public firmware configuration are different facts. The D2, D7, and D0 connections exist on our prototype, while `CONTROL_BTS_ENABLE=false` and `USE_LIMIT_SWITCHES=false` remain the committed safe defaults. We have not reported limit-switch contact polarity, calibration, or endpoint accuracy, so the documentation does not infer those behaviors from the wire connections alone.
 
 ## Wiring and Electrical Safety
 
 **Disconnect motor power before changing wiring. Never apply 5 V or 12 V to an ESP8266 GPIO. Never power the motor from the NodeMCU.**
 
-The measured values describe the prototype during 10 cycles on 2026-08-26. The 7.20 A value is the highest observed startup current, not a stall-current result. No results were supplied for a deliberate stall, obstruction test, fuse rating, wire gauge, waterproofing, or long-duration operation.
+The measured values describe our prototype during 10 cycles on June 26, 2026. The 7.20 A value is the highest observed startup current, not a stall-current result. We did not record results for a deliberate stall, obstruction test, final fuse rating, wire gauge, waterproofing, or long-duration operation.
 
-R_EN/L_EN still need a clear as-built diagram. If they are tied to 5 V, D2 must remain disconnected. If firmware control is introduced later, every 5 V enable connection must be removed first. Never connect the same enable node to both 5 V and an ESP8266 GPIO.
+Our prototype connects R_EN and L_EN control to D2/GPIO4. The public build keeps `CONTROL_BTS_ENABLE=false`, so it does not configure or drive D2 as an enable output. Before enabling firmware control in a future build, measure the enable node and confirm that no external 5 V source shares the GPIO connection. Never connect the same enable node to both 5 V and an ESP8266 GPIO.
 
 ## Automatic and Manual Control
 
@@ -150,7 +154,7 @@ If rain returns during a manual retraction, GreenGuard stops, waits through reve
 
 ## Estimated Position Is Not a Position Sensor
 
-Without limit switches, 0% and 100% are inferred from runtime. Voltage, load, friction, slipping, obstructions, and interrupted power can all create drift. The dashboard reports `ESTIMATED`; stopping midway produces `STOPPED_PARTIAL`; rebooting after interrupted movement produces `UNKNOWN`. A directly observed endpoint can be recorded as `USER_CALIBRATED`. Only an enabled and active physical switch can produce `LIMIT_CONFIRMED`.
+With the public `USE_LIMIT_SWITCHES=false` setting, 0% and 100% are inferred from runtime even though D7 and D0 are physically connected on our prototype. Voltage, load, friction, slipping, obstructions, and interrupted power can all create drift. The dashboard reports `ESTIMATED`; stopping midway produces `STOPPED_PARTIAL`; rebooting after interrupted movement produces `UNKNOWN`. A directly observed endpoint can be recorded as `USER_CALIBRATED`. Only a characterized, enabled, and active physical switch can produce `LIMIT_CONFIRMED`.
 
 This was one part we got stuck on for quite a while: completing 10 successful cycles still does not turn “the motor ran for N seconds” into a precise endpoint measurement.
 
@@ -170,7 +174,7 @@ data/                      dashboard stored in LittleFS
 test/test_core/            native controller simulation
 test/web.test.mjs          protocol, DOM contract, authentication, and mock integration
 scripts/                   project checker and preview server
-docs/                      audit, design, protocol, tests, images, and physical checklist
+docs/                      hardware record, design, protocol, tests, images, and physical checklist
 ```
 
 ## Environment Setup
@@ -205,6 +209,8 @@ The verified firmware build uses the required environment:
 board = nodemcuv2
 ```
 
+This repository targets the ESP8266-based NodeMCU 1.0 ESP-12E only. ESP32 board targets and APIs are not compatible with this hardware record or firmware build.
+
 Current automated results: firmware PASS, LittleFS PASS, 45/45 controller scenarios with 132 assertions, and 11/11 web/protocol/integration tests with 52 assertions. That is 56 test cases/scenarios and 184 assertions in total. Firmware uses 31,720/81,920 bytes of RAM (38.7%) and 382,923/1,044,464 bytes of flash (36.7%). See [test results](docs/TEST_RESULTS.md).
 
 ## Upload Firmware and Dashboard
@@ -236,16 +242,15 @@ npm run preview
 
 ## What We Physically Validated
 
-The 2026-08-26 test confirmed firmware running on a real NodeMCU, active-LOW rain input, 10 loaded deploy–retract cycles, the listed motor and 3V3 voltages, loaded/startup currents, reversal dead-time, temperatures after the cycles, and no NodeMCU reset during that test.
+Our June 26, 2026 test confirmed firmware running on a real NodeMCU, active-LOW rain input, 10 loaded deploy–retract cycles, the listed motor and 3V3 voltages, loaded/startup currents, reversal dead-time, temperatures after the cycles, and no NodeMCU reset during that test.
 
 ## Current Limitations
 
-The owner still needs to document or investigate:
+Our current evidence does not yet cover:
 
-- An as-built table for every GPIO, BTS7960 terminal, and R_EN/L_EN connection.
-- Whether limit switches are present, how endpoints are determined, and the actual full-travel time.
+- Limit-switch contact polarity, calibration, endpoint accuracy, and the actual full-travel time. The D7 and D0 physical connections are confirmed, but the public firmware option remains disabled.
 - Motor stall current and behavior under different obstruction conditions.
-- Fuse rating, wire gauge, physical emergency disconnect, and mechanical protection.
+- Final fuse selection, wire gauge, power-ground topology, physical emergency disconnect, and mechanical protection.
 - Long-duration testing, a larger cycle count, rain exposure, drainage, corrosion, and ingress protection.
 - Security outside a trusted LAN; the current HTTP token is not TLS and must not be exposed directly to the Internet.
 
@@ -253,12 +258,12 @@ Items outside the ten-cycle test must not be inferred from those results. Contin
 
 ## Technical Documentation
 
-- [Hardware audit](docs/HARDWARE_AUDIT.md)
+- [Hardware record](docs/HARDWARE_AUDIT.md)
 - [System design](docs/SYSTEM_DESIGN.md)
 - [Protocol](docs/PROTOCOL.md)
 - [Hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md)
 - [Automated and physical test results](docs/TEST_RESULTS.md)
-- [Wiring worksheet](WIRING.md)
+- [Confirmed wiring and safety notes](WIRING.md)
 
 ## People Behind the Project
 

@@ -1,61 +1,68 @@
-# Hardware audit
+# GreenGuard hardware record
 
-Audit date: 2026-08-26; physical-validation update recorded 2026-08-27. This audit separates confirmed components and owner-supplied measurements from exact wiring details and tests that remain undocumented.
+We completed the physical prototype and performed the recorded functional and electrical validation on **June 26, 2026**. This document separates our confirmed hardware and wiring from safe public firmware defaults and from behavior that still needs broader testing.
 
-## Evidence table
+## Confirmed hardware and observations
 
-| Component | Confirmed model / result | Supply or logic observation | Candidate pin | Evidence | Remaining uncertainty |
-| --- | --- | --- | --- | --- | --- |
-| Controller | **NodeMCU 1.0 (ESP-12E Module), ESP8266** | Lowest observed 3V3 rail at motor startup: 3.17 V; no reset in 10 cycles | PlatformIO `nodemcuv2` | Owner correction and physical test | Exact controller power wiring is not recorded as an as-built diagram |
-| Motor driver | **BTS7960 / HW-039** | Drove the loaded motor through 10 deploy–retract cycles | D5/GPIO14 RPWM and D6/GPIO12 LPWM in firmware | Owner physical-validation update | Actual terminal-to-GPIO table, cooling margin, and behavior outside the test scope remain undocumented |
-| Driver enable | R_EN and L_EN present on the driver | Wiring voltage/path not supplied | External HIGH is a repository lead; optional D2/GPIO4 remains disabled | Repository history plus confirmed HW-039 use | Exact EN wiring remains unverified; never join an existing 5 V node to ESP8266 GPIO |
-| Rain module | **RainDrop digital sensor using active-LOW DO** | Dry 3.27 V; wet 0.08 V | D1/GPIO5 in firmware | Owner measurements | Exact VCC and physical pin-to-wire record were not supplied; long-term wet/outdoor behavior remains untested |
-| Actuator | **12 V DC geared motor** | 2.63 A normal loaded motion; 7.20 A maximum measured startup current | BTS7960 motor outputs | Owner measurements and 10 loaded cycles | 7.20 A is not a stall-current test; full-travel time, jam response, and lifetime endurance remain undocumented |
-| Retracted limit | Not confirmed | 3.3 V active-low candidate only | Optional D7/GPIO13, disabled | Firmware option only | Presence, contact type, placement, and polarity are unknown |
-| Deployed limit | Not confirmed | 3.3 V active-low candidate only | Optional D0/GPIO16 with external pull-up, disabled | Firmware option only | Presence, contact type, placement, and polarity are unknown |
-| Power system | **12 V, 10 A supply and XL4005 step-down module** | Motor rail 12.18 V before and 11.72 V during motion; 3.8% drop | n/a | Owner component and measurement update | Exact topology, shared-ground record, fuse, wire gauge, connector ratings, ripple, and weather protection remain undocumented |
+| Component | Confirmed model or connection | Our physical evidence | Scope still to characterize |
+| --- | --- | --- | --- |
+| Controller | **NodeMCU 1.0 (ESP-12E Module), ESP8266**; PlatformIO `nodemcuv2` | Lowest observed 3V3 rail was 3.17 V during motor startup; no reset during 10 loaded cycles | Complete controller power topology, ripple, and regulator thermal margin |
+| Motor driver | **BTS7960 / HW-039** | D5/GPIO14 to RPWM and D6/GPIO12 to LPWM; drove the loaded motor through 10 deploy–retract cycles | Cooling margin, obstruction behavior, and terminal polarity after any rewiring |
+| Driver enable | D2/GPIO4 connected to BTS7960 R_EN and L_EN control | Confirmed as-built connection | Enable-node voltage and behavior were not included in our measurement set; public `CONTROL_BTS_ENABLE=false` |
+| Rain module | **RainDrop digital sensor**, DO connected to D1/GPIO5 | 3.27 V dry, 0.08 V wet, active-LOW | Long-term wet exposure and behavior after supply or threshold changes |
+| Actuator | **12 V DC geared motor** | 2.63 A loaded running current; 7.20 A maximum measured startup current; 10 loaded cycles | Stall current, jam response, full-travel variation, and lifetime endurance |
+| Retracted limit connection | D7/GPIO13 | Confirmed as-built wire connection | Contact type, electrical polarity, calibration, and endpoint accuracy; public `USE_LIMIT_SWITCHES=false` |
+| Deployed limit connection | D0/GPIO16 | Confirmed as-built wire connection | Contact type, electrical polarity, calibration, and endpoint accuracy; public `USE_LIMIT_SWITCHES=false` |
+| Power system | **12 V, 10 A supply and XL4005 step-down module** | Motor rail was 12.18 V before and 11.72 V during movement, a 3.8% drop | Shared-ground record, final fuse, wire gauge, connector ratings, ripple, and weather protection |
 
-Confirmed hardware and measurements above come from the owner's completed prototype test. Candidate pins and undocumented wiring paths are not promoted to physical facts.
+## Confirmed as-built GPIO map
+
+| NodeMCU pin | GPIO | Physical connection |
+| --- | ---: | --- |
+| D1 | GPIO5 | RainDrop DO |
+| D5 | GPIO14 | BTS7960 RPWM |
+| D6 | GPIO12 | BTS7960 LPWM |
+| D2 | GPIO4 | BTS7960 R_EN and L_EN control |
+| D7 | GPIO13 | Retracted limit-switch connection |
+| D0 | GPIO16 | Deployed limit-switch connection |
+
+These are the connections used in our completed prototype. Disabled firmware flags do not make the physical wiring optional or hypothetical.
 
 ## Physical validation summary
 
-Firmware based on commit `441f91e` was flashed to the real prototype on 2026-08-26. It completed 10 consecutive deploy–retract cycles with the mechanical load. Measured reversal dead-time was 307 ms versus the configured 300 ms. Peak temperatures after the cycles were 51°C at the motor and 34°C at the wires/connectors. The result is **PASS with conditions within this test scope**.
+On June 26, 2026, our prototype completed 10 consecutive deploy–retract cycles with the real mechanical load. We measured 307 ms of reversal dead-time against the configured 300 ms target. Peak temperatures after the cycles were 51°C at the motor and 34°C at the wires and connectors. The result was **PASS with conditions within this test scope**.
 
-This confirms observed function and the listed electrical values for those 10 cycles. It does not establish long-term endurance, outdoor weather resistance, ingress protection, every obstruction condition, stall behavior, or lifetime reliability. The actuator-enabled test configuration was local; public source remains `ACTUATOR_DRY_RUN=true`.
+The observed 3V3 rail remained stable enough during the measured startup events, and the NodeMCU did not reset. The test confirms the listed operation and measurements for those 10 cycles. It does not establish long-term endurance, outdoor weather resistance, ingress protection, corrosion resistance, every obstruction or stall condition, or product-lifetime reliability.
 
-## Controller and pin audit
+The real prototype used an actuator-enabled local configuration. The public repository intentionally retains `ACTUATOR_DRY_RUN=true`, `CONTROL_BTS_ENABLE=false`, and `USE_LIMIT_SWITCHES=false`.
 
-`platformio.ini` uses `board = nodemcuv2`. PlatformIO identifies that board as NodeMCU 1.0 (ESP-12E Module), ESP8266, 80 MHz, 80 KiB RAM, and 4 MiB flash. The firmware uses ESP8266 Arduino APIs (`ESP8266WiFi`, `ESP8266WebServer`, mDNS, LittleFS) and was compiled against that board profile.
+## ESP8266 pin and boot audit
 
-The NodeMCU labels map as follows: D0→GPIO16, D1→GPIO5, D2→GPIO4, D3→GPIO0, D4→GPIO2, D5→GPIO14, D6→GPIO12, D7→GPIO13, and D8→GPIO15. D3/GPIO0, D4/GPIO2, and D8/GPIO15 participate in boot selection; GreenGuard deliberately assigns no default sensor, PWM, enable, or limit function to those three pins. D1, D2, D5, D6, and D7 avoid the boot straps. D0/GPIO16 is only an optional disabled limit input and must use a verified external pull-up rather than relying on a normal internal pull-up.
+`platformio.ini` uses `board = nodemcuv2`. The firmware uses ESP8266 Arduino APIs, ESP8266WebServer, mDNS, and LittleFS.
+
+The NodeMCU labels map as follows: D0→GPIO16, D1→GPIO5, D2→GPIO4, D3→GPIO0, D4→GPIO2, D5→GPIO14, D6→GPIO12, D7→GPIO13, and D8→GPIO15. D3/GPIO0, D4/GPIO2, and D8/GPIO15 participate in boot selection; GreenGuard assigns no sensor, PWM, enable, or limit function to those pins. The confirmed D0/GPIO16 limit connection requires careful electrical review because GPIO16 differs from the other GPIOs and does not provide the same normal internal pull-up behavior.
 
 Sources:
 
 - [PlatformIO NodeMCU 1.0 board definition](https://docs.platformio.org/en/latest/boards/espressif8266/nodemcuv2.html)
-- [ESP8266 Arduino core pin mapping and filesystem documentation](https://arduino-esp8266.readthedocs.io/en/stable/)
+- [ESP8266 Arduino core documentation](https://arduino-esp8266.readthedocs.io/en/stable/)
 - [Espressif boot-mode selection](https://docs.espressif.com/projects/esptool/en/latest/esp8266/advanced-topics/boot-mode-selection.html)
 - [Espressif ESP8266EX datasheet](https://www.espressif.com/sites/default/files/documentation/0a-esp8266ex_datasheet_en.pdf)
+- [Infineon BTS7960 datasheet](https://www.infineon.com/assets/row/public/documents/10/57/infineon-bts7960-ds-en.pdf)
 
 ## Electrical safety findings
 
-- Treat every ESP8266 GPIO as 3.3 V-only. Do not connect an unmeasured 5 V DO, R_EN, L_EN, or driver output to it.
-- RainDrop DO was measured at 3.27 V dry and 0.08 V wet, confirming active-LOW behavior within the ESP8266 GPIO range during this test. Preserve this voltage boundary if wiring or sensor power changes.
-- The HW-039/BTS7960 module identity is confirmed, and the prototype operated with it. The BTS7960 silicon datasheet lists logic thresholds compatible with a 3.3 V HIGH, but the exact module terminal wiring still needs an as-built record. See the [Infineon BTS7960 datasheet](https://www.infineon.com/assets/row/public/documents/10/57/infineon-bts7960-ds-en.pdf).
-- If R_EN/L_EN are really tied high, firmware can stop only by setting both PWM inputs LOW. If they are instead moved to D2, remove every 5 V enable connection first and set `CONTROL_BTS_ENABLE=true` only after checking the new wiring. Never combine the two arrangements.
-- The confirmed power components are a 12 V, 10 A supply and XL4005 step-down module. The observed motor rail dropped from 12.18 V to 11.72 V (3.8%), while the lowest observed 3V3 rail was 3.17 V without a NodeMCU reset. Exact topology and shared-ground wiring still need documentation.
-- Supply and fuse sizing must be based on a proper circuit review and stall-current evidence, not the 7.20 A startup maximum or the headline current printed on a driver. Add or verify a physical emergency disconnect, appropriately rated fuse, wire/connector sizing, strain relief, suppression, and a weatherproof enclosure.
-- No current sensor is evidenced. Software cannot detect a jam or overload merely from elapsed time.
+- Treat every ESP8266 GPIO as 3.3 V-only. Never connect a 5 V or 12 V source to RainDrop DO, D2, D7, D0, or any other GPIO.
+- RainDrop DO measured 3.27 V dry and 0.08 V wet in our tested arrangement. Recheck these levels after any sensor-supply, threshold, or wiring change.
+- Our prototype connects both driver enable controls to D2/GPIO4. The public build does not drive D2 because `CONTROL_BTS_ENABLE=false`. Before enabling that option, measure the node and ensure that no external 5 V source shares it.
+- The public build does not read the physically connected limit inputs because `USE_LIMIT_SWITCHES=false`. Do not enable them until contact polarity, pull-up requirements, and endpoint behavior have been verified.
+- The observed motor rail fell from 12.18 V to 11.72 V, while the lowest observed 3V3 rail was 3.17 V without a NodeMCU reset. These observations do not replace a complete power and grounding diagram.
+- Size the fuse and wiring from a circuit review and stall-current evidence, not the 7.20 A startup maximum or the headline current printed on the motor driver.
+- Add or verify a physical emergency disconnect, strain relief, suppression, ventilation, and a weather-resistant enclosure before broader use.
+- No current sensor is implemented, so firmware cannot detect a jam or overload from current.
 
-## Position truth
+## Position confidence
 
-With `USE_LIMIT_SWITCHES=false`, reaching 0% or 100% means only that the configured time elapsed. The dashboard labels this `ESTIMATED`; it is not endpoint evidence. Voltage, load, friction, slipping, obstruction, and interrupted movement cause drift. STOP produces `STOPPED_PARTIAL`. A reboot after a saved active movement produces `UNKNOWN`. A manually observed endpoint is `USER_CALIBRATED`, while an enabled physical switch would be `LIMIT_CONFIRMED`.
+The physical D7 and D0 limit connections are confirmed, but the public build keeps `USE_LIMIT_SWITCHES=false`. It therefore infers 0% and 100% from configured travel time rather than switch input. The dashboard labels timed completion as `ESTIMATED`; STOP produces `STOPPED_PARTIAL`, and rebooting after saved movement produces `UNKNOWN`.
 
-The prototype physically completed deploy–retract cycles, but the supplied validation record does not identify which GPIO/terminal produces each direction, whether endpoint switches exist, the endpoint mechanism, or the actual full-travel time. `deployUsesRpwm` therefore remains a configurable mapping rather than a documented wiring fact.
-
-## Scope tiers
-
-Implemented and observed with the confirmed prototype hardware: local wet/dry filtering, AUTO/MANUAL, deploy/retract/STOP, reversal dead-time, maximum runtime, offline autonomy, local dashboard, and explicitly estimated position. The committed build remains in dry-run by default.
-
-Small hardware additions: two endpoint switches, current/stall sensing, correctly sized fuse, physical emergency disconnect, verified level shifting, improved regulated power, and weatherproofing.
-
-Longer term: soil moisture, forecast-aware policy, battery/solar monitoring, notifications, history, and multiple zones. These are not part of this rebuild.
+Our validation confirmed successful physical deploy–retract movement, but it did not record limit-switch polarity, switch calibration, endpoint accuracy, the exact terminal polarity for each physical direction, or full-travel time. Those behaviors must be measured before enabling switch-based confirmation or relying on timed position as a precise endpoint.
