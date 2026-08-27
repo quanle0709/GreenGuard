@@ -6,15 +6,15 @@ GreenGuard is an automatic plant-protection shield built around a **NodeMCU 1.0 
 
 GreenGuard began as a small course for friends who were also learners. The tutors represented by [`quanle0709`](https://github.com/quanle0709) and [`nhiennguyenquoc`](https://github.com/nhiennguyenquoc) initiated and guided the learning experience as embedded-systems tutors, instructors, project mentors, and technical guides.
 
-The purpose was not to create a startup, commercial product, or formal research invention. It was to help a learner understand embedded systems through practice and see what studying a related university field might actually involve.
+The purpose was not to create a startup, commercial product, or formal research invention. It was to help learners understand embedded systems through practice and see what studying a related university field might actually involve.
 
 ## Learning by Building
 
-Our group learned by connecting each concept to something physical. The tutors shaped the learning process, explained the underlying ideas, provided technical direction, helped solve problems, and supervised integration and testing. The learner was not a passive observer: after three months of learning and experimenting, the learner directly built, integrated, debugged, and tested the final GreenGuard prototype under their guidance.
+Our group learned by connecting each concept to something physical. The tutors shaped the learning process, explained the underlying ideas, provided technical direction, helped solve problems, and supervised integration and testing. The student learners were not passive observers: after three months of learning and experimenting, they directly built, integrated, debugged, and tested the final GreenGuard prototype under the tutors’ guidance.
 
 GreenGuard became our way of answering a practical question: how do a sensor, a microcontroller, a motor driver, and a real mechanism work together? The answer involved more wiring than we first expected :)))
 
-### What the Learner Practiced
+### What the Learners Practiced
 
 - Understanding the role of a microcontroller in an embedded system.
 - Reading a digital sensor signal and connecting that input to actuator behavior.
@@ -29,7 +29,7 @@ GreenGuard became our way of answering a practical question: how do a sensor, a 
 
 ## The Final Course Project
 
-The learner assembled the mechanical structure, integrated the electronics and firmware, worked through faults, and helped test the completed prototype. It definitely did not work immediately on the first attempt :3, which made the debugging part just as valuable as the finished result.
+The learners assembled the mechanical structure, integrated the electronics and firmware, worked through faults, and tested the completed prototype. It definitely did not work immediately on the first attempt :3, which made the debugging part just as valuable as the finished result.
 
 <p align="center">
   <img src="docs/images/greenguard-prototype-overview.png" width="760" alt="Angled overview of the completed GreenGuard prototype with its transparent shield, circular frame, supports, and central drive mechanism">
@@ -268,10 +268,10 @@ Items outside the ten-cycle test must not be inferred from those results. Contin
 ## People Behind the Project
 
 - **[`quanle0709`](https://github.com/quanle0709) and [`nhiennguyenquoc`](https://github.com/nhiennguyenquoc)** — course initiators, embedded-systems tutors, instructors, project mentors, and technical guides. They designed and guided the learning process, explained concepts, provided technical direction, helped solve problems, and supervised integration and testing.
-- **[`minhkhoi092211`](https://github.com/minhkhoi092211)** — student learner, hands-on prototype builder, and repository contributor. The learner directly built, integrated, debugged, and tested the final GreenGuard prototype under the tutors’ guidance.
+- **[Minh Khôi](https://github.com/minhkhoi092211) and [Nguyễn Đình Bảo](https://github.com/Nguyen-Dinh-Bao/portfolio)** — student learners, hands-on prototype builders, and project contributors. They directly built, integrated, debugged, and tested the completed GreenGuard prototype under the tutors’ guidance.
 
-GitHub attribution remains based on real commits. The repository does not rewrite history, add empty attribution commits, or fabricate `Co-authored-by` lines.
+Minh Khôi is additionally recognized as a repository contributor through his real Git commits. Hands-on project roles remain separate from GitHub commit attribution. The repository does not rewrite history, add empty attribution commits, or fabricate `Co-authored-by` lines.
 
 ## A Note for Other Learners
 
-GreenGuard is not a perfect product. It is evidence that a learner can start with GPIO and a digital sensor, keep testing one part at a time, and eventually build a real working system. If you are learning embedded systems too, measure what you can, debug one layer at a time, and do not be discouraged when correct code meets incorrect wiring 🔧. We hope this project makes embedded engineering feel a little more concrete—and gives you ideas for a project of your own 🌱
+GreenGuard is not a perfect product. It is evidence that learners can start with GPIO and a digital sensor, keep testing one part at a time, and eventually build a real working system. If you are learning embedded systems too, measure what you can, debug one layer at a time, and do not be discouraged when correct code meets incorrect wiring 🔧. We hope this project makes embedded engineering feel a little more concrete—and gives you ideas for a project of your own 🌱
