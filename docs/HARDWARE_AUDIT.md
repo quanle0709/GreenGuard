@@ -1,21 +1,27 @@
 # Hardware audit
 
-Audit date: 2026-08-26. This audit separates the owner's authoritative controller correction from repository claims and measurements that have not happened.
+Audit date: 2026-08-26; physical-validation update recorded 2026-08-27. This audit separates confirmed components and owner-supplied measurements from exact wiring details and tests that remain undocumented.
 
 ## Evidence table
 
-| Component | Claimed model | Confirmed model | Supply voltage | Logic voltage | Candidate pin | Function | Evidence | Risk / uncertainty |
-| --- | --- | --- | ---: | ---: | --- | --- | --- | --- |
-| Controller | NodeMCU 1.0 / ESP-12E | **NodeMCU 1.0 (ESP-12E Module), ESP8266** | Board power path not measured | 3.3 V GPIO | PlatformIO `nodemcuv2` | Local controller and web server | Owner's authoritative correction; PlatformIO board definition | Exact board power input and installed flash have not been measured |
-| Motor driver | BTS7960 / IBT-2-style module | Unverified | Motor/logic rails unmeasured | Actual module threshold unmeasured | D5/GPIO14 RPWM and D6/GPIO12 LPWM are repository leads | Bidirectional DC motor drive | Current repository and owner recollection | Terminal order, module variant, cooling, current capacity, and 3.3 V acceptance need physical checks |
-| Driver enable | R_EN and L_EN | Unverified | Repository claims 5 V logic | ESP8266 GPIO must not receive 5 V | External HIGH is the repository lead; optional D2/GPIO4 profile remains disabled | Bridge enable/inhibit | Commit `18a98b3` says both are pulled to 5 V | Firmware cannot prove either wire; joining a GPIO to an existing 5 V connection would damage the ESP8266 |
-| Rain module | Digital rain sensor using DO | Unverified | Unmeasured | DO must stay within 0–3.3 V at the ESP8266 | D1/GPIO5 is the repository lead | Binary wet/dry input | Commit `ae752ab` and current wiring text | Model, VCC, DO pull-up voltage, polarity, threshold, and wet reliability are unknown |
-| Actuator | DC motor; 12 V is recollected | Unverified | Unmeasured | n/a | BTS7960 motor outputs | Move shield | Repository text and owner recollection only | Rated voltage, direction, rated/stall current, travel time, jam behavior, and endpoints are unknown |
-| Retracted limit | None evidenced | Unverified / probably absent | 3.3 V candidate | Active-low candidate | Optional D7/GPIO13, disabled | Confirm shield retracted | New optional profile only | Presence, contact type, placement, and polarity are unknown |
-| Deployed limit | None evidenced | Unverified / probably absent | 3.3 V candidate | Active-low candidate | Optional D0/GPIO16 with external pull-up, disabled | Confirm shield deployed | New optional profile only | GPIO16 needs special care; presence, placement, and polarity are unknown |
-| Power system | Old README named 12 V 10 A and LM2596 | Unverified | Unmeasured | n/a | n/a | Supply motor and logic | Stale prose only; no schematic, photo, label, or measurement | Capacity, regulation, fuse, wire size, connector rating, grounding, noise, and weather protection are unknown |
+| Component | Confirmed model / result | Supply or logic observation | Candidate pin | Evidence | Remaining uncertainty |
+| --- | --- | --- | --- | --- | --- |
+| Controller | **NodeMCU 1.0 (ESP-12E Module), ESP8266** | Lowest observed 3V3 rail at motor startup: 3.17 V; no reset in 10 cycles | PlatformIO `nodemcuv2` | Owner correction and physical test | Exact controller power wiring is not recorded as an as-built diagram |
+| Motor driver | **BTS7960 / HW-039** | Drove the loaded motor through 10 deploy–retract cycles | D5/GPIO14 RPWM and D6/GPIO12 LPWM in firmware | Owner physical-validation update | Actual terminal-to-GPIO table, cooling margin, and behavior outside the test scope remain undocumented |
+| Driver enable | R_EN and L_EN present on the driver | Wiring voltage/path not supplied | External HIGH is a repository lead; optional D2/GPIO4 remains disabled | Repository history plus confirmed HW-039 use | Exact EN wiring remains unverified; never join an existing 5 V node to ESP8266 GPIO |
+| Rain module | **RainDrop digital sensor using active-LOW DO** | Dry 3.27 V; wet 0.08 V | D1/GPIO5 in firmware | Owner measurements | Exact VCC and physical pin-to-wire record were not supplied; long-term wet/outdoor behavior remains untested |
+| Actuator | **12 V DC geared motor** | 2.63 A normal loaded motion; 7.20 A maximum measured startup current | BTS7960 motor outputs | Owner measurements and 10 loaded cycles | 7.20 A is not a stall-current test; full-travel time, jam response, and lifetime endurance remain undocumented |
+| Retracted limit | Not confirmed | 3.3 V active-low candidate only | Optional D7/GPIO13, disabled | Firmware option only | Presence, contact type, placement, and polarity are unknown |
+| Deployed limit | Not confirmed | 3.3 V active-low candidate only | Optional D0/GPIO16 with external pull-up, disabled | Firmware option only | Presence, contact type, placement, and polarity are unknown |
+| Power system | **12 V, 10 A supply and XL4005 step-down module** | Motor rail 12.18 V before and 11.72 V during motion; 3.8% drop | n/a | Owner component and measurement update | Exact topology, shared-ground record, fuse, wire gauge, connector ratings, ripple, and weather protection remain undocumented |
 
-The controller is the only physically authoritative model in this table. Repository evidence is not physical confirmation.
+Confirmed hardware and measurements above come from the owner's completed prototype test. Candidate pins and undocumented wiring paths are not promoted to physical facts.
+
+## Physical validation summary
+
+Firmware based on commit `441f91e` was flashed to the real prototype on 2026-08-26. It completed 10 consecutive deploy–retract cycles with the mechanical load. Measured reversal dead-time was 307 ms versus the configured 300 ms. Peak temperatures after the cycles were 51°C at the motor and 34°C at the wires/connectors. The result is **PASS with conditions within this test scope**.
+
+This confirms observed function and the listed electrical values for those 10 cycles. It does not establish long-term endurance, outdoor weather resistance, ingress protection, every obstruction condition, stall behavior, or lifetime reliability. The actuator-enabled test configuration was local; public source remains `ACTUATOR_DRY_RUN=true`.
 
 ## Controller and pin audit
 
@@ -33,22 +39,22 @@ Sources:
 ## Electrical safety findings
 
 - Treat every ESP8266 GPIO as 3.3 V-only. Do not connect an unmeasured 5 V DO, R_EN, L_EN, or driver output to it.
-- The rain module is unidentified. Some comparator boards pull DO toward their VCC. Powering a compatible module at 3.3 V may make DO safe, but threshold behavior must still be tested. If it requires 5 V, use a properly designed divider, buffer, or level shifter and measure the resulting HIGH level before connection.
-- The BTS7960 silicon datasheet lists logic thresholds compatible with a 3.3 V HIGH, but that does not certify an unknown IBT-2 module, its extra components, terminal labels, or wiring. Verify the actual board. See the [Infineon BTS7960 datasheet](https://www.infineon.com/assets/row/public/documents/10/57/infineon-bts7960-ds-en.pdf).
+- RainDrop DO was measured at 3.27 V dry and 0.08 V wet, confirming active-LOW behavior within the ESP8266 GPIO range during this test. Preserve this voltage boundary if wiring or sensor power changes.
+- The HW-039/BTS7960 module identity is confirmed, and the prototype operated with it. The BTS7960 silicon datasheet lists logic thresholds compatible with a 3.3 V HIGH, but the exact module terminal wiring still needs an as-built record. See the [Infineon BTS7960 datasheet](https://www.infineon.com/assets/row/public/documents/10/57/infineon-bts7960-ds-en.pdf).
 - If R_EN/L_EN are really tied high, firmware can stop only by setting both PWM inputs LOW. If they are instead moved to D2, remove every 5 V enable connection first and set `CONTROL_BTS_ENABLE=true` only after checking the new wiring. Never combine the two arrangements.
-- A separate motor power path and a regulated controller supply are expected. Their grounds normally need a common reference for logic signals, but shared ground is not confirmed on this build.
-- Supply and fuse sizing must be based on measured motor stall current, not the headline current printed on a driver listing. Add a physical emergency disconnect, appropriately rated fuse, wire/connector sizing, strain relief, suppression, and a weatherproof enclosure.
+- The confirmed power components are a 12 V, 10 A supply and XL4005 step-down module. The observed motor rail dropped from 12.18 V to 11.72 V (3.8%), while the lowest observed 3V3 rail was 3.17 V without a NodeMCU reset. Exact topology and shared-ground wiring still need documentation.
+- Supply and fuse sizing must be based on a proper circuit review and stall-current evidence, not the 7.20 A startup maximum or the headline current printed on a driver. Add or verify a physical emergency disconnect, appropriately rated fuse, wire/connector sizing, strain relief, suppression, and a weatherproof enclosure.
 - No current sensor is evidenced. Software cannot detect a jam or overload merely from elapsed time.
 
 ## Position truth
 
 With `USE_LIMIT_SWITCHES=false`, reaching 0% or 100% means only that the configured time elapsed. The dashboard labels this `ESTIMATED`; it is not endpoint evidence. Voltage, load, friction, slipping, obstruction, and interrupted movement cause drift. STOP produces `STOPPED_PARTIAL`. A reboot after a saved active movement produces `UNKNOWN`. A manually observed endpoint is `USER_CALIBRATED`, while an enabled physical switch would be `LIMIT_CONFIRMED`.
 
-The actual deploy direction, retract direction, endpoint behavior, and full-travel time remain unverified. `DEPLOY_USES_RPWM` is therefore a configurable assumption, not a physical fact.
+The prototype physically completed deploy–retract cycles, but the supplied validation record does not identify which GPIO/terminal produces each direction, whether endpoint switches exist, the endpoint mechanism, or the actual full-travel time. `deployUsesRpwm` therefore remains a configurable mapping rather than a documented wiring fact.
 
 ## Scope tiers
 
-Implementable with the believed hardware: local wet/dry filtering, AUTO/MANUAL, deploy/retract/STOP, reversal dead-time, maximum runtime, fault lockout, offline autonomy, local dashboard, dry-run, and explicitly estimated position.
+Implemented and observed with the confirmed prototype hardware: local wet/dry filtering, AUTO/MANUAL, deploy/retract/STOP, reversal dead-time, maximum runtime, offline autonomy, local dashboard, and explicitly estimated position. The committed build remains in dry-run by default.
 
 Small hardware additions: two endpoint switches, current/stall sensing, correctly sized fuse, physical emergency disconnect, verified level shifting, improved regulated power, and weatherproofing.
 

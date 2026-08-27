@@ -1,6 +1,6 @@
 # Hardware test checklist
 
-No item below was checked during the software rebuild. Record measurements, date, operator, and evidence before changing `ACTUATOR_DRY_RUN`.
+No item below was checked by Codex during the autonomous software rebuild. The owner subsequently reported a real-prototype test on 2026-08-26; completed measurements are recorded below, while unchecked items still need evidence. Keep the public repository at `ACTUATOR_DRY_RUN=true`.
 
 ## Identify and measure with motor disconnected
 
@@ -45,10 +45,12 @@ No item below was checked during the software rebuild. Record measurements, date
 
 | Item | Measured value / evidence | Date | Operator |
 | --- | --- | --- | --- |
-| Actual GPIO wiring | Not tested | — | — |
-| Rain DO dry/wet voltage and polarity | Not tested | — | — |
-| Motor rated/stall current | Not tested | — | — |
-| Supply and fuse | Not tested | — | — |
-| Deploy/retract direction | Not tested | — | — |
-| Endpoints / switches | Not tested | — | — |
-| Full-travel time | Not tested | — | — |
+| Actual GPIO wiring | As-built table not supplied | — | — |
+| Rain DO dry/wet voltage and polarity | 3.27 V / 0.08 V; active-LOW | 2026-08-26 | Owner-reported |
+| Motor current | 2.63 A normal loaded motion; 7.20 A maximum startup; stall not tested | 2026-08-26 | Owner-reported |
+| Motor supply | 12.18 V before / 11.72 V during movement; 3.8% drop; fuse evidence not supplied | 2026-08-26 | Owner-reported |
+| 3V3 rail / controller stability | Minimum 3.17 V at startup; no NodeMCU reset | 2026-08-26 | Owner-reported |
+| Direction reversal | Functional deploy–retract observed; 307 ms dead-time; exact terminal mapping not supplied | 2026-08-26 | Owner-reported |
+| Temperature after 10 cycles | Motor 51°C; wires/connectors 34°C | 2026-08-26 | Owner-reported |
+| Endpoints / switches | Not supplied | — | — |
+| Full-travel time | Not supplied | — | — |

@@ -18,7 +18,7 @@ Run date: 2026-08-26, Asia/Saigon. Tests ran from the canonical D-drive reposito
 | Generated artifact/archive scan | `git ls-files` pattern scan | PASS; no `.pio`, `node_modules`, binary, object, or ZIP artifact tracked |
 | Local path scan | `rg` for Windows absolute paths outside ignored output | PASS; no local absolute path in repository files |
 | Git whitespace check | `git diff --check` | PASS; no whitespace errors |
-| Serial-device detection | `pio device list` plus Windows serial/PnP inventory | No NodeMCU/USB UART candidate. COM3/4/6/7 are Bluetooth serial links; no flash attempted |
+| Serial-device detection in the autonomous rebuild environment | `pio device list` plus Windows serial/PnP inventory | No NodeMCU/USB UART candidate was attached to that environment. COM3/4/6/7 were Bluetooth serial links; Codex did not perform the physical flash |
 | Visual browser rendering | in-app browser skill against `http://127.0.0.1:4173` | BLOCKED; runtime returned no available browser instances after the required recovery check |
 
 Current combined count: **56 test cases/scenarios and 184 assertions**. Scenario count is reported separately from assertions to avoid inflating coverage.
@@ -43,6 +43,24 @@ Web tests cover nonzero request IDs, delayed and mismatched acknowledgements, se
 - ESP32 text now remains only in negative regression tests, the audit explanation, and the repository rule that forbids migrating this project to ESP32.
 - Git commit/push and remote verification are delivery steps performed after this test record is finalized; their SHAs are reported in the final handoff.
 
-## Physical verification
+## Owner-reported physical verification
 
-None. No serial device has yet been identified as GreenGuard, no firmware was flashed, and no motor/sensor/power wiring was energized or measured. The confirmed controller model comes from the owner's authoritative correction. All remaining physical items are listed in [HARDWARE_TEST_CHECKLIST.md](HARDWARE_TEST_CHECKLIST.md).
+After the autonomous software rebuild, the owner flashed firmware based on commit `441f91e` to the confirmed NodeMCU 1.0 ESP-12E and tested the completed prototype on 2026-08-26. These measurements were supplied by the owner; they were not captured by Codex's local test environment.
+
+| Measurement | Result |
+| --- | ---: |
+| Continuous deploy–retract testing | 10 cycles with the real mechanical load |
+| Motor supply before / during movement | 12.18 V / 11.72 V |
+| Supply voltage drop | 3.8% |
+| Lowest 3V3 rail during motor startup | 3.17 V |
+| NodeMCU resets | None |
+| Rain DO dry / wet | 3.27 V / 0.08 V, active-LOW |
+| Normal loaded motor current | 2.63 A |
+| Maximum measured startup current | 7.20 A |
+| Direction-reversal dead-time | 307 ms |
+| Highest motor / wire-and-connector temperature | 51°C / 34°C after 10 cycles |
+| Evaluation | PASS with conditions within this test scope |
+
+The observed 3V3 rail remained stable enough for the tested startup events, and the 307 ms measured dead-time closely matched the configured 300 ms target. Rain DO stayed within the ESP8266 GPIO voltage range during this test. Ten cycles do not establish long-term endurance, outdoor weather resistance, ingress protection, every obstruction condition, stall behavior, or lifetime reliability.
+
+The real prototype used an actuator-enabled local test configuration. The committed repository intentionally retains `ACTUATOR_DRY_RUN=true`. Remaining evidence gaps are tracked in [HARDWARE_TEST_CHECKLIST.md](HARDWARE_TEST_CHECKLIST.md).
