@@ -15,6 +15,10 @@ We assembled and operated our completed GreenGuard prototype with the NodeMCU 1.
 
 The connection table records our physical build. It does not establish limit-switch contact polarity, calibration, endpoint accuracy, or the mechanism's full-travel time because those behaviors were not part of our reported measurement set.
 
+![GreenGuard circuit assembly diagram](images/greenguard-circuit-assembly-diagram.png)
+
+This circuit-assembly diagram is retained as supporting project media. The confirmed table above and the current firmware configuration are authoritative; the diagram is not evidence of limit-switch behavior, electrical protection, or the recorded measurements. Mains-voltage wiring is hazardous and is outside the reproducible low-voltage build guidance in this repository.
+
 D3/GPIO0, D4/GPIO2, and D8/GPIO15 have no GreenGuard firmware assignment and participate in ESP8266 boot selection. Avoid using them for added peripherals without reviewing the required boot levels.
 
 ## Public firmware configuration
@@ -49,4 +53,6 @@ With the committed `CONTROL_BTS_ENABLE=false`, firmware does not configure or dr
 
 The 10 A supply rating does not determine the correct fuse by itself. Select protection from the motor's stall behavior and the ratings of the supply, driver, wire, connectors, and disconnect. Keep a reachable physical emergency disconnect during powered testing.
 
-See the [hardware record](docs/HARDWARE_AUDIT.md) and [hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md) before reproducing or changing the system.
+The [mechanical assembly clip](images/greenguard-mechanical-assembly-demo.mp4) is also retained as visual evidence of the prototype structure. It is not a recording of the ten-cycle validation campaign.
+
+See the [hardware record](HARDWARE_AUDIT.md) and [hardware test checklist](HARDWARE_TEST_CHECKLIST.md) before reproducing or changing the system.

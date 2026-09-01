@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
 const required = [
-  'platformio.ini', 'README.md', 'WIRING.md', 'include/HardwareConfig.h', 'include/secrets.example.h',
+  'platformio.ini', 'README.md', 'docs/WIRING.md', 'include/HardwareConfig.h', 'include/secrets.example.h',
   'lib/GreenGuardCore/src/GreenGuardCore.h', 'lib/GreenGuardCore/src/GreenGuardCore.cpp',
   'src/main.cpp', 'data/index.html', 'data/style.css', 'data/protocol.js', 'data/app.js',
   'docs/HARDWARE_AUDIT.md', 'docs/SYSTEM_DESIGN.md', 'docs/PROTOCOL.md',
