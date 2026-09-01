@@ -36,7 +36,7 @@ These results describe our tested arrangement and load. The actuator-enabled con
 ### With motor power disconnected
 
 - [ ] Confirm the board markings and select PlatformIO `board = nodemcuv2`.
-- [ ] Compare every wire against the [confirmed as-built table](../WIRING.md); record any intentional change.
+- [ ] Compare every wire against the [confirmed as-built table](WIRING.md); record any intentional change.
 - [ ] Confirm RPWM, LPWM, R_EN, L_EN, VCC, GND, B+, B−, M+, and M− labels on the specific driver module.
 - [ ] Measure rain-module VCC and DO in dry and wet states. DO at the ESP8266 must remain within the 3.3 V GPIO range.
 - [ ] Confirm no ESP8266 GPIO has a 5 V or 12 V path.

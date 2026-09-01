@@ -2,6 +2,21 @@
 
 GreenGuard is an automatic plant-protection shield built around a **NodeMCU 1.0 (ESP-12E Module / ESP8266)**. It reads a digital rain sensor and drives a motor to deploy or retract the shield. The completed prototype was the final hands-on output of a three-month introductory embedded-systems course.
 
+<p align="center">
+  <img src="docs/images/greenguard-prototype-overview.png" width="760" alt="Angled overview of the completed GreenGuard prototype with its transparent shield, circular frame, supports, and central drive mechanism">
+</p>
+<p align="center"><em>The completed GreenGuard prototype after three months of embedded-systems learning and hands-on development.</em></p>
+
+## At a Glance
+
+- **Hardware:** NodeMCU ESP8266, active-LOW RainDrop DO input, BTS7960/HW-039 driver, and a 12 V geared DC motor.
+- **Firmware:** the ESP8266 integration lives in `src/`; the hardware-independent controller is in `lib/GreenGuardCore/src/`.
+- **Dashboard:** the Vietnamese local web interface and protocol client live in `data/` and are served from LittleFS.
+- **Current behavior:** AUTO/MANUAL control, qualified wet/dry input, reversal dead-time, runtime faulting, persistence, request correlation, and local dashboard control.
+- **Public safety boundary:** `ACTUATOR_DRY_RUN=true`, `CONTROL_BTS_ENABLE=false`, and `USE_LIMIT_SWITCHES=false`; the committed build does not energize the motor.
+
+Start with [Build and Test](#build-and-test), browse the [repository structure](#repository-structure), or open the [technical documentation](#technical-documentation).
+
 ## How GreenGuard Began
 
 GreenGuard began as a small course for friends who were also learners. The tutors represented by [`quanle0709`](https://github.com/quanle0709) and [`nhiennguyenquoc`](https://github.com/nhiennguyenquoc) initiated and guided the learning experience as embedded-systems tutors, instructors, project mentors, and technical guides.
@@ -30,11 +45,6 @@ GreenGuard became our way of answering a practical question: how do a sensor, a 
 ## The Final Course Project
 
 The learners assembled the mechanical structure, integrated the electronics and firmware, worked through faults, and tested the completed prototype. It definitely did not work immediately on the first attempt :3, which made the debugging part just as valuable as the finished result.
-
-<p align="center">
-  <img src="docs/images/greenguard-prototype-overview.png" width="760" alt="Angled overview of the completed GreenGuard prototype with its transparent shield, circular frame, supports, and central drive mechanism">
-</p>
-<p align="center"><em>The completed GreenGuard prototype after three months of embedded-systems learning and hands-on development.</em></p>
 
 We completed the physical GreenGuard prototype, applied the updated working firmware, and performed the recorded physical validation on **June 26, 2026**. We updated and published the repository on GitHub on **August 26, 2026**. These are separate milestones: June records the completed build and physical test, while August records the repository update.
 
@@ -125,7 +135,7 @@ We assembled and tested the prototype with the following NodeMCU pin mapping. Th
 | D7 | GPIO13 | Retracted limit-switch connection | Physically connected; public limit handling is disabled |
 | D0 | GPIO16 | Deployed limit-switch connection | Physically connected; public limit handling is disabled |
 
-D3/GPIO0, D4/GPIO2, and D8/GPIO15 are ESP8266 boot-strapping pins, so the default profile avoids them. Read the [confirmed wiring record](WIRING.md) and [hardware record](docs/HARDWARE_AUDIT.md) before changing wiring or output configuration.
+D3/GPIO0, D4/GPIO2, and D8/GPIO15 are ESP8266 boot-strapping pins, so the default profile avoids them. Read the [confirmed wiring record](docs/WIRING.md) and [hardware record](docs/HARDWARE_AUDIT.md) before changing wiring or output configuration.
 
 Physical wiring and public firmware configuration are different facts. The D2, D7, and D0 connections exist on our prototype, while `CONTROL_BTS_ENABLE=false` and `USE_LIMIT_SWITCHES=false` remain the committed safe defaults. We have not reported limit-switch contact polarity, calibration, or endpoint accuracy, so the documentation does not infer those behaviors from the wire connections alone.
 
@@ -174,7 +184,7 @@ data/                      dashboard stored in LittleFS
 test/test_core/            native controller simulation
 test/web.test.mjs          protocol, DOM contract, authentication, and mock integration
 scripts/                   project checker and preview server
-docs/                      hardware record, design, protocol, tests, images, and physical checklist
+docs/                      wiring, hardware records, design, protocol, tests, and project media
 ```
 
 ## Environment Setup
@@ -263,7 +273,7 @@ Items outside the ten-cycle test must not be inferred from those results. Contin
 - [Protocol](docs/PROTOCOL.md)
 - [Hardware test checklist](docs/HARDWARE_TEST_CHECKLIST.md)
 - [Automated and physical test results](docs/TEST_RESULTS.md)
-- [Confirmed wiring and safety notes](WIRING.md)
+- [Confirmed wiring and safety notes](docs/WIRING.md)
 
 ## People Behind the Project
 
