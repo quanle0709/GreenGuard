@@ -131,9 +131,7 @@ We assembled and tested the prototype with the following NodeMCU pin mapping. Th
 | D1 | GPIO5 | RainDrop DO | Active-LOW; measured 3.27 V dry and 0.08 V wet |
 | D5 | GPIO14 | BTS7960 RPWM | Motor-direction PWM input used by our prototype |
 | D6 | GPIO12 | BTS7960 LPWM | Opposite motor-direction PWM input used by our prototype |
-| D2 | GPIO4 | BTS7960 R_EN and L_EN control | Physically connected; public firmware control is disabled |
-| D7 | GPIO13 | Retracted limit-switch connection | Physically connected; public limit handling is disabled |
-| D0 | GPIO16 | Deployed limit-switch connection | Physically connected; public limit handling is disabled |
+| VV |  | BTS7960 R_EN and L_EN control | Physically connected; public firmware control is disabled |
 
 D3/GPIO0, D4/GPIO2, and D8/GPIO15 are ESP8266 boot-strapping pins, so the default profile avoids them. Read the [confirmed wiring record](docs/WIRING.md) and [hardware record](docs/HARDWARE_AUDIT.md) before changing wiring or output configuration.
 
